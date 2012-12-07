@@ -4,6 +4,8 @@ package Saphira::EventProcessor{
     use Saphira::Module::Admin;
     use Saphira::Module::SimpleMessageHooks;
     use Saphira::Module::WolframAlpha;
+    use Saphira::Module::SynchTube;
+    # use Saphira::Module::Wikipedia;
     
     sub new {
         my $class = shift;
@@ -24,9 +26,16 @@ package Saphira::EventProcessor{
         new Saphira::Module::Google($self, $self->{bot});
         new Saphira::Module::SimpleMessageHooks($self, $self->{bot});
         new Saphira::Module::WolframAlpha($self, $self->{bot});
+        new Saphira::Module::SynchTube($self, $self->{bot});
+        # new Saphira::Module::Wikipedia($self, $self->{bot});
     }
     
-    sub process_command {
+    sub registerModules {
+        my $self = shift;
+        my @moduleList = glob('modules/*.pm');
+    }
+    
+    sub processCommand {
         my ($self, $channel, $who, $command, $args) = @_;
         while (my ($module, $moduleHash) = each(%{$self->{modules}})) {
             foreach (@{$moduleHash->{commandHooks}->{$command}}) {
@@ -39,7 +48,7 @@ package Saphira::EventProcessor{
         return undef;
     }
     
-    sub process_message{
+    sub processMessage{
         my ($self, $channel, $who, $body) = @_;
         while (my ($module, $moduleHash) = each(%{$self->{modules}})) {
             foreach (@{$moduleHash->{messageHooks}}) {
@@ -52,7 +61,7 @@ package Saphira::EventProcessor{
         return undef;
     }
     
-    sub process_emoted{
+    sub processEmoted{
         my ($self, $channel, $who, $body) = @_;
         while (my ($module, $moduleHash) = each(%{$self->{modules}})) {
             foreach (@{$moduleHash->{emotedHooks}}) {

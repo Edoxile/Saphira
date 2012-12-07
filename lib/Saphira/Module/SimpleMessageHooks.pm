@@ -6,7 +6,7 @@ package Saphira::Module::SimpleMessageHooks;
     use strict;
     use Switch;
     
-    use URI::Title 'title';
+    use URI::Title qw( title );
     
     sub init {
         my $self = shift;
@@ -31,11 +31,17 @@ package Saphira::Module::SimpleMessageHooks;
     sub handleCommands {
         my ($self, $channel, $who, $body) = @_;
         
-        return unless ($body =~ /^Saphira, (\w+)\s+(.+?)/si);
+        return unless ($body =~ /^Saphira(,|:)?\s+(.+?)$/si);
         
-        switch($1) {
-            case /kick/i { $self->{bot}->kick(); }
+        my $args = '';
+        my $command = $2;
+        if( $command =~ /^(\w+)\s+(.+?)$/si ) {
+            $command = $1;
+            $args = $2;
         }
+        
+        # run command through the eventProcessor
+        $self->{bot}->{eventProcessor}->processCommand($channel, $who, $command, $args);
     }
     
     sub handleGreetings {

@@ -27,8 +27,8 @@ package Saphira::Module::Admin;
         $self->registerCommandHook('part', \&handlePart);
         $self->registerCommandHook('listadmins', \&handleListAdmins);
         $self->registerCommandHook('quit', \&handleQuit);
-        #$self->registerCommandHook('ident', \&handleIdentify);
         $self->registerCommandHook('kick', \&handleKick);
+        $self->registerCommandHook('help', \&handleHelp);
     }
     
     sub handleJoin {
@@ -72,18 +72,6 @@ package Saphira::Module::Admin;
         $self->{bot}->say( channel => $channel, who => $who, body => 'Admins: ' . join(', ', @a) );
     }
     
-    sub handleIdentify {
-        my ($self, $channel, $who, $message) = @_;
-        if( getAccessLevel($who) == 5 ) {
-            print '>> Identifying (command called by ' . $who . ', accesslevel: [' . $admins->{$who} . '])...' . "\n";
-            $self->{bot}->say( channel => 'msg', who => 'NickServ', body => "IDENTIFY $password" );
-        } elsif( getAccessLevel($who) > 0 ) {
-            print '>> Identify command called by ' . $who . ', but unsufficient permission: [' . $admins->{$who} . ']...' . "\n";
-        } else {
-            print '>> Identify command called by ' . $who . ', but he/she\'s no admin!' . "\n";
-        }
-    }
-    
     sub handleKick {
         my ($self, $channel, $who, $args) = @_;
         if( getAccessLevel($who) > 0 ) {
@@ -96,6 +84,39 @@ package Saphira::Module::Admin;
         } else {
             print '>> Kick command called by ' . $who . ', but he/she\'s no admin!' . "\n";
         }
+    }
+    
+    sub handleHelp {
+        my ($self, $channel, $who, $args) = @_;
+        my $message = '';
+        $message .= "Available commands:\n";
+        $message .= "|==============================================================|\n";
+        $message .= "| Command                 | Function                           |\n";
+        $message .= "|-------------------------|------------------------------------|\n";
+        $message .= "| !help                   | Show this help                     |\n";
+        $message .= "| !join <channel>         | Join channel <channel>             |\n";
+        $message .= "| !part                   | Part channel                       |\n";
+        $message .= "| !g <query>              | Search <query> on Google           |\n";
+        $message .= "| !gi <query>             | Search <query> on Google Images    |\n";
+        $message .= "| !y <query>              | Search <query> on Youtube          |\n";
+        $message .= "| !calc <query>           | Parse <query> with WolframAlpha    |\n";
+        $message .= "| !listadmins             | List admins and their accesslevels |\n";
+        if( getAccessLevel($who) > 0 ) {
+            $message .= "|-------------------------|------------------------------------|\n";
+            $message .= "| Admin commands          | Function                           |\n";
+            $message .= "|-------------------------|------------------------------------|\n";
+            $message .= "| !kick <user>  <message> | Kicks <user> out of channel        |\n";
+            if ( getAccessLevel($who) > 1 ) {
+                $message .= "| !part [channel]         | Part from [channel]                |\n";
+            }
+            if ( getAccessLevel($who) > 4 ) {
+                $message .= "| !quit [message]         | Close connection and quit          |\n";
+                
+            }
+        }
+        $message .= "|==============================================================|\n";
+        
+        $self->{bot}->say(channel => 'msg', who => $who, body => $message);
     }
     
     sub getAccessLevel{

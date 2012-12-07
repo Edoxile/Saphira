@@ -25,13 +25,13 @@ package Saphira::Bot;
             
             my $fullCommand = $2;
             if( $fullCommand =~ /^(.+?)\s+(.+?)$/si ) {
-                $self->{eventProcessor}->process_command($data->{channel}, $data->{who}, $1, $2);
+                $self->{eventProcessor}->processCommand($data->{channel}, $data->{who}, $1, $2);
             } else {
-                $self->{eventProcessor}->process_command($data->{channel}, $data->{who}, $fullCommand, '');
+                $self->{eventProcessor}->processCommand($data->{channel}, $data->{who}, $fullCommand, '');
             }               
             return undef;
         } else {
-            $self->{eventProcessor}->process_message($data->{channel}, $data->{who}, $data->{body});
+            $self->{eventProcessor}->processMessage($data->{channel}, $data->{who}, $data->{body});
             return undef;
         }
     }
@@ -47,7 +47,7 @@ package Saphira::Bot;
         my $self = shift;
         my $data  = shift;
         
-        $self->{eventProcessor}->process_emoted($data->{channel}, $data->{who}, $data->{body});
+        $self->{eventProcessor}->processEmoted($data->{channel}, $data->{who}, $data->{body});
         return undef;
     }
 

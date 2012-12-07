@@ -7,15 +7,19 @@ package Saphira::Module::Google;
 
     use Google::Search;
     use HTML::Entities;
-    use URI::Title 'title';
+    use Encode;
     
     sub init {
         my $self = shift;
 
         # Register hooks
         $self->registerCommandHook('g', \&handleWebSearch);
+        $self->registerCommandHook('google', \&handleWebSearch);
         $self->registerCommandHook('gi', \&handleImageSearch);
+        $self->registerCommandHook('gimages', \&handleImageSearch);
+        $self->registerCommandHook('googleimages', \&handleImageSearch);
         $self->registerCommandHook('y', \&handleYoutubeSearch);
+        $self->registerCommandHook('youtube', \&handleYoutubeSearch);
     }
 
     sub handleWebSearch {
@@ -29,8 +33,7 @@ package Saphira::Module::Google;
         if (!defined($result)) {
             $self->{bot}->say( channel => $channel, who => $who, body => 'I\'m Sorry ' . $who . ', I can\'t find anything for \'' . $searchTerm . '\' on Google.' );
         } else {
-            my $title = title( $result->uri );
-            my $message = $who . ': ' . $title . ' - ' . $result->uri;
+            my $message = $who . ': ' . decodeTitle( HTML::Entities::decode( $result->titleNoFormatting ) ) . ' - ' . $result->uri;
             $self->{bot}->say( channel => $channel, who => $who, body => $message );
         }
     }
@@ -40,14 +43,13 @@ package Saphira::Module::Google;
         
         print '>> Youtube search term: [ ' . $searchTerm . " ]\n";
         
-        my $search = Google::Search->Web( hl => 'nl', query => 'link:youtube.com ' . $searchTerm );
+        my $search = Google::Search->Web( hl => 'nl', query => 'site:youtube.com ' . $searchTerm );
         my $result = $search->first;
 
         if (!defined($result)) {
             $self->{bot}->say( channel => $channel, who => $who, body => 'I\'m Sorry ' . $who . ', I can\'t find anything for \'' . $searchTerm . '\' on Youtube.' );
         } else {
-            my $title = title( $result->uri );
-            my $message = $who . ': ' . $title . ' - ' . $result->uri;
+            my $message = $who . ': ' . decodeTitle( HTML::Entities::decode( $result->titleNoFormatting ) ) . ' - ' . $result->uri;
             $self->{bot}->say( channel => $channel, who => $who, body => $message );
         }
     }
@@ -66,6 +68,18 @@ package Saphira::Module::Google;
             my $message = $who . ': ' . $result->uri;
             $self->{bot}->say( channel => $channel, who => $who, body => $message );
         }
+    }
+    
+    sub decodeTitle {
+        my $title = shift;
+        $title = decode('utf-8', $title, 1) || $title;
+        $title =~ s/\s+$//;
+        $title =~ s/^\s+//;
+        $title =~ s/\n+//g;
+        $title =~ s/\s+/ /g;
+        $title = decode_entities($title);
+        $title =~ s/(&\#(\d+);?)/chr($2)/eg;
+        return $title;
     }
 
     1;
