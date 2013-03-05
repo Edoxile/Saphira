@@ -20,6 +20,10 @@ package Saphira::Module::Google;
         $self->registerCommandHook('googleimages', \&handleImageSearch);
         $self->registerCommandHook('y', \&handleYoutubeSearch);
         $self->registerCommandHook('youtube', \&handleYoutubeSearch);
+        
+        #$self->registerCommandHook(m/^g(oogle)+$/si \&handleWebSearch);
+        #$self->registerCommandHook(m/^g(oogle)+i(mages)+$/si, \&handleImageSearch);
+        #$self->registerCommandHook(m/^y(outube)+$/si, \&handleYoutubeSearch);
     }
 
     sub handleWebSearch {

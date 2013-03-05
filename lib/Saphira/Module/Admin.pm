@@ -23,6 +23,13 @@ package Saphira::Module::Admin;
         
         print '>> Admins: ' . join( ', ', keys $admins ) . "\n";
         
+        #$self->registerCommandHook(m/^join$/si, \&handleJoin);
+        #$self->registerCommandHook(m/^part$/si, \&handlePart);
+        #$self->registerCommandHook(m/^l(s|ist)admins$/si, \&handleListAdmins);
+        #$self->registerCommandHook(m/^quit$/si, \&handleQuit);
+        #$self->registerCommandHook(m/^kick$/si, \&handleKick);
+        #$self->registerCommandHook(m/^help$/si, \&handleHelp);
+        
         $self->registerCommandHook('join', \&handleJoin);
         $self->registerCommandHook('part', \&handlePart);
         $self->registerCommandHook('listadmins', \&handleListAdmins);

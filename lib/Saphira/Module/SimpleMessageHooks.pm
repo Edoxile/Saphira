@@ -14,6 +14,13 @@ package Saphira::Module::SimpleMessageHooks;
         # Register hooks
         $self->registerMessageHook(\&handleUriTitle);
         $self->registerEmotedHook(\&handleGreetings);
+        #$self->registerMessageHook(\&handleHighlightedCommands);
+        #$self->registerMessageHook(\&handleLogging);
+    }
+    
+    sub handleLogging {
+        my ($self, $channel, $who, $body) = @_;
+        my $chanFile = substr($channel,1);
     }
 
     sub handleUriTitle {
@@ -28,20 +35,21 @@ package Saphira::Module::SimpleMessageHooks;
         $self->{bot}->say( channel => $channel, who => $who, body => "[ $title ]" );
     }
     
-    sub handleCommands {
+    sub handleHighlightedCommands {
         my ($self, $channel, $who, $body) = @_;
         
-        return unless ($body =~ /^Saphira(,|:)?\s+(.+?)$/si);
+        return unless ($body =~ m/^Saphira[\,\!\:]?\s{1,}(.+?)$/si);
         
         my $args = '';
-        my $command = $2;
-        if( $command =~ /^(\w+)\s+(.+?)$/si ) {
+        my $command = $1;
+        if ($command =~ m/^(.+?)\s*(.*?)$/si) {
             $command = $1;
             $args = $2;
         }
         
-        # run command through the eventProcessor
-        $self->{bot}->{eventProcessor}->processCommand($channel, $who, $command, $args);
+        #$self->{bot}->{eventProcessor}->processCommand($channel, $who, $command, $args);
+        
+        return undef;
     }
     
     sub handleGreetings {
@@ -54,7 +62,12 @@ package Saphira::Module::SimpleMessageHooks;
         
         switch($1) {
             case /greets/si              { $message = 'Hey there ' . $who . '!'; }
-            case /(hits|spanks|kicks)/si { $message = 'That\'s not nice ' . $who . '...'; }
+            case /(hits|spanks)/si { $message = 'That\'s not nice ' . $who . '...'; }
+            case /kicks/si {
+                #TODO: check if we can kick first before spouting nonsense
+                $self->{bot}->say( channel => $channel, who => $who, body => 'Thanks ' . $who . '! Let me return the favour!' );
+                $self->{bot}->kick(who => $who, channel => $channel, body => 'Bye bye!' )
+            }
         }
 
         $self->{bot}->say( channel => $channel, who => $who, body => $message );
