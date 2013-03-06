@@ -55,13 +55,14 @@ package Saphira::Module::SimpleMessageHooks;
     sub handleGreetings {
         my ($self, $channel, $who, $body) = @_;
         
-        return unless ($body =~ /(greets|kicks|hits|spanks) Saphira/si);
+        return unless ($body =~ /(greets|kicks|hits|spanks|thanks) Saphira/si);
         return if ($1 eq '');
         
         my $message = '';
         
         switch($1) {
-            case /greets/si              { $message = 'Hey there ' . $who . '!'; }
+            case /thanks/si        { $message = 'No problem ' . $who . '!'; }
+            case /greets/si        { $message = 'Hey there ' . $who . '!'; }
             case /(hits|spanks)/si { $message = 'That\'s not nice ' . $who . '...'; }
             case /kicks/si {
                 #TODO: check if we can kick first before spouting nonsense
