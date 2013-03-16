@@ -75,10 +75,15 @@ sub new {
     return $self;
 }
 
-sub said   { $_[0]->processHooks( 'said',   $_[0]->{server}, $_[1] ); return; }
+sub said   {
+    print '>> Said: [' . $_[1]->{channel} . '] <' . $_[1]->{who} . '>' . $_[1]->{body} . "\n";
+    $_[0]->processHooks( 'said',   $_[0]->{server}, $_[1] ); return;
+}
+
 sub emoted { $_[0]->processHooks( 'emoted', $_[0]->{server}, $_[1] ); return; }
 
 sub noticed {
+    print '>> Notice: [' . $_[1]->{channel} . '] <' . $_[1]->{who} . '>' . $_[1]->{body} . "\n";
     $_[0]->processHooks( 'noticed', $_[0]->{server}, $_[1] );
     return;
 }
@@ -114,6 +119,16 @@ sub help { return $botinfo; }
 sub init {
 
     return 1;
+}
+
+sub connected {
+    my $self = shift;
+    return unless $self->{server}->{nickservpass} ne '';
+    $self->say(
+        who     => 'NickServ',
+        channel => 'msg',
+        body    => 'IDENTIFY ' . $self->{server}->{nickservpass}
+    );
 }
 
 sub addressed {
