@@ -123,6 +123,7 @@ sub init {
 
 sub connected {
     my $self = shift;
+    print '[I] Connected! Identifying if password is present...' . "\n";
     return unless $self->{server}->{nickservpass} ne '';
     $self->say(
         who     => 'NickServ',
@@ -292,9 +293,9 @@ sub init {
           new Saphira::API::Channel( $self, $result->{id}, $result->{name},
             $result->{password}, $result->{state}, 1, $result->{log} );
     }
-    $self->{bot} = new Saphira::Bot( $self, $self->{wrapper} );
+    #$self->{bot} = new Saphira::Bot( $self, $self->{wrapper} );
     
-    $self->{bot}->run();
+    #$self->{bot}->run();
 }
 
 sub getServerName {
@@ -458,7 +459,7 @@ sub init {
     #print '[D] Number of rows in select-servers query: ' . $ps->rows . "\n";
     
     while ( my $result = $ps->fetchrow_hashref() ) {
-        print '[I] Connecting to server ' . $result->{servername} . "\n";
+        print "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}]\n";
         $self->{servers}->{ $result->{id} } = new Saphira::API::Server(
             $result->{id},       $result->{servername},       $result->{address},
             $result->{port},     $result->{secure},           $result->{username},
@@ -466,6 +467,7 @@ sub init {
         );
         $self->{bots}->{ $result->{id} } =
           new Saphira::Bot( $self->{servers}->{ $result->{id} }, $self );
+        $self->{bots}->{$result->{id}}->run();
     }
 
     return 1;
