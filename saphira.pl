@@ -1,6 +1,39 @@
 #!/usr/bin/env perl
 use warnings;
 use strict;
+use Config::IniFiles;
+
+END {
+unless ( -e 'saphira.ini' ) {
+    print "[E] No configuration file found. Creating one with placeholder variables. Please\n"
+      . "\tmodify saphira.ini and restart the bot.\n";
+
+    my $cfg = Config::IniFiles->new();
+
+    $cfg->newval( 'mysql', 'host',     'localhost' );
+    $cfg->newval( 'mysql', 'username', 'root' );
+    $cfg->newval( 'mysql', 'password', '' );
+    $cfg->newval( 'mysql', 'database', 'saphira' );
+
+    $cfg->newval( 'irc', 'autoload', 'manage' );
+
+    $cfg->WriteConfig('saphira.ini');
+
+    exit;
+}
+#print "[D] Reading Config...\n";
+my $cfg = Config::IniFiles->new( -file => 'saphira.ini' );
+
+#print "[D] Starting Wrapper...\n";
+my $wrapper = new Saphira::Wrapper(
+    $cfg->val( 'mysql', 'host' ),
+    $cfg->val( 'mysql', 'username' ),
+    $cfg->val( 'mysql', 'password' ),
+    $cfg->val( 'mysql', 'database' ),
+    [ split( ',', $cfg->val( 'irc', 'autoload' ) ) ]
+);
+
+}
 
 package Saphira::Bot;
 use base 'Bot::BasicBot';
@@ -32,7 +65,7 @@ sub new {
     $self->charset('utf-8');
 
     my @channels = ();
-    foreach my $channel ( values $self->{server}->{channels} ) {
+    foreach my $channel ( values %{$self->{server}->{channels}} ) {
         push( @channels, $channel->getName() );
     }
     $self->channels(@channels);
@@ -202,9 +235,7 @@ use base 'Saphira::API::DBExt';
 
 sub new {
     my $class = shift;
-    my $self = bless {}, $class;
-    push $self,
-      {
+    my $self = bless {
         id           => shift,
         servername   => shift,
         address      => shift,
@@ -221,14 +252,17 @@ sub new {
         __queries    => {
             insert => {
                 query  => 'update servers set address = ?, port = ?, secure = ?, password = ?, nickservpassword = ? where id = ?',
-                fields => ( 'address', 'port', 'secure', 'password', 'nickservpassword', 'id' )
+                fields => [ 'address', 'port', 'secure', 'password', 'nickservpassword', 'id' ]
             },
             select_channels => {
                 query  => 'select * from channels where state = 1 and server = ?',
-                fields => ('id')
+                fields => ['id']
             }
         }
-      };
+      }, $class;
+    
+    #print '[D] Running Saphira::API::Servers $self->init() for {'.$self->{id}.'}' . $self->{servername} . "\n";
+    
     $self->init();
 
     return $self;
@@ -244,6 +278,8 @@ sub init {
             $result->{password}, $result->{state}, 1, $result->{log} );
     }
     $self->{bot} = new Saphira::Bot( $self, $self->{wrapper} );
+    
+    $self->{bot}->run();
 }
 
 sub getServerName {
@@ -360,7 +396,9 @@ sub new {
         servers => {},
         bots    => {}
     }, $class;
-
+    
+    #print "[D] MySQL information: connecting $self->{mysql_username} @ $self->{mysql_host} : $self->{mysql_database} using password: $self->{mysql_password}\n";
+    
     $self->{dbd} = DBI->connect(
         sprintf( 'DBI:mysql:%s;host=%s', $self->{mysql_database}, $self->{mysql_host} ),
         $self->{mysql_username},
@@ -372,12 +410,18 @@ sub new {
         print '[E] MySQL connect error: ' . $DBI::errstr . "\n";
         return undef;
     }
-
+    
+    #print "[D] Connected to MySQL database!\n";
+    
     $self->{dbd}->do('SET NAMES utf8');
-
+    
+    #print "[D] MySQL names set as UTF-8\n";
+    
     if ( $self->init() ) {
+        #print "[D] \$self->init() succeded!\n";
         return $self;
     } else {
+        #print "[D] \$self->init() failed...\n";
         return undef;
     }
 }
@@ -395,7 +439,11 @@ sub init {
         print '[E] MySQL select error: ' . $ps->errstr . "\n";
         return 0;
     }
+    
+    #print '[D] Number of rows in select-servers query: ' . $ps->rows . "\n";
+    
     while ( my $result = $ps->fetchrow_hashref() ) {
+        print '[I] Connecting to server ' . $result->{servername} . "\n";
         $self->{servers}->{ $result->{id} } = new Saphira::API::Server(
             $result->{id},       $result->{servername},       $result->{address},
             $result->{port},     $result->{secure},           $result->{username},
@@ -1028,35 +1076,4 @@ sub setPassword {
 
 1;
 
-package main;
-use Config::IniFiles;
-
-unless ( -e 'saphira.ini' ) {
-    print "[E] No configuration file found. Creating one with placeholder variables. Please\n"
-      . "\tmodify saphira.ini and restart the bot.\n";
-
-    my $cfg = Config::IniFiles->new();
-
-    $cfg->newval( 'mysql', 'host',     'localhost' );
-    $cfg->newval( 'mysql', 'username', 'root' );
-    $cfg->newval( 'mysql', 'password', '' );
-    $cfg->newval( 'mysql', 'database', 'saphira' );
-
-    $cfg->newval( 'irc', 'autoload', 'manage' );
-
-    $cfg->WriteConfig('saphira.ini');
-
-    exit;
-}
-
-my $cfg = Config::IniFiles->new( -file => 'saphira.ini' );
-
-my $wrapper = new Saphira::Wrapper(
-    $cfg->val( 'mysql', 'host' ),
-    $cfg->val( 'mysql', 'username' ),
-    $cfg->val( 'mysql', 'password' ),
-    $cfg->val( 'mysql', 'database' ),
-    [ split( ',', $cfg->val( 'irc', 'autoload' ) ) ]
-);
-
-1;
+#1;
