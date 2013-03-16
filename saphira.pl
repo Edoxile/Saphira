@@ -3,8 +3,39 @@ use warnings;
 use strict;
 use Config::IniFiles;
 
+unless ( -e 'saphira.ini' ) {
+    print
+"[E] No configuration file found. Creating one with placeholder variables. Please\n"
+      . "\tmodify saphira.ini and restart the bot.\n";
+
+    my $cfg = Config::IniFiles->new();
+
+    $cfg->newval( 'mysql', 'host',     'localhost' );
+    $cfg->newval( 'mysql', 'username', 'root' );
+    $cfg->newval( 'mysql', 'password', '' );
+    $cfg->newval( 'mysql', 'database', 'saphira' );
+
+    $cfg->newval( 'irc', 'autoload', 'manage' );
+
+    $cfg->WriteConfig('saphira.ini');
+
+    exit;
+}
+
+my $cfg = Config::IniFiles->new( -file => 'saphira.ini' );
+
+my $wrapper = new Saphira::Bot::Wrapper(
+    $cfg->val( 'mysql', 'host' ),
+    $cfg->val( 'mysql', 'username' ),
+    $cfg->val( 'mysql', 'password' ),
+    $cfg->val( 'mysql', 'database' ),
+    [ split( ',', $cfg->val( 'irc', 'autoload' ) ) ]
+);
+
 package Saphira::Bot;
 use base 'Bot::BasicBot';
+use POE;
+
 my $version = '2.0.0';
 my $botinfo =
     'Saphira (v'
@@ -30,345 +61,141 @@ sub new {
     $self->name('Saphira, a Perl IRC-bot by Edoxile');
     $self->charset('utf-8');
 
-    $self->channels($channels);
+    my @channels = ();
+    foreach my $channel ( values $self->{server}->{channels} ) {
+        push( @channels, $channel->getName() );
+    }
+    $self->channels(@channels);
 
     $self->init or die "init did not return a true value - dying";
 
     return $self;
 }
 
-sub said     { $_[0]->processHooks( 'said',     $_[1] ); return; }
-sub emoted   { $_[0]->processHooks( 'emoted',   $_[1] ); return; }
-sub noticed  { $_[0]->processHooks( 'noticed',  $_[1] ); return; }
-sub chanjoin { $_[0]->processHooks( 'chanjoin', $_[1] ); return; }
-sub chanpart { $_[0]->processHooks( 'chanpart', $_[1] ); return; }
-sub topic    { $_[0]->processHooks( 'topic',    $_[1] ); return; }
-sub nick_change {
-    $_[0]->processHooks( 'nick_change', ( $_[1], $_[2] ) );
+sub said   { $_[0]->processHooks( 'said',   $_[0]->{server}, $_[1] ); return; }
+sub emoted { $_[0]->processHooks( 'emoted', $_[0]->{server}, $_[1] ); return; }
+
+sub noticed {
+    $_[0]->processHooks( 'noticed', $_[0]->{server}, $_[1] );
     return;
 }
-sub kicked   { $_[0]->processHooks( 'kicked',   $_[1] ); return; }
-sub userquit { $_[0]->processHooks( 'userquit', $_[1] ); return; }
-sub invited  { $_[0]->processHooks( 'invited',  $_[1] ); return; }
-sub help     { return $botinfo; }
+
+sub chanjoin {
+    $_[0]->processHooks( 'chanjoin', $_[0]->{server}, $_[1] );
+    return;
+}
+
+sub chanpart {
+    $_[0]->processHooks( 'chanpart', $_[0]->{server}, $_[1] );
+    return;
+}
+sub topic  { $_[0]->processHooks( 'topic',  $_[0]->{server}, $_[1] ); return; }
+sub kicked { $_[0]->processHooks( 'kicked', $_[0]->{server}, $_[1] ); return; }
+
+sub userquit {
+    $_[0]->processHooks( 'userquit', $_[0]->{server}, $_[1] );
+    return;
+}
+
+sub invited {
+    $_[0]->processHooks( 'invited', $_[0]->{server}, $_[1] );
+    return;
+}
+
+sub nick_change {
+    $_[0]->processHooks( 'nick_change', $_[0]->{server}, ( $_[1], $_[2] ) );
+    return;
+}
+sub help { return $botinfo; }
 
 sub init {
 
     return 1;
 }
 
-sub getAvailableModules {
-    my $self = shift;
-
-    my @availableModules = glob('modules/*.pm');
-    foreach (@availableModules) {
-        $_ =~ s/modules\/(.*)\.pm/$1/;
-    }
-
-    return @availableModules;
-}
-
-# Returns an array of currently loaded modules (both active and inactive ones)
-sub getLoadedModules {
-    my $self = shift;
-    return @{ $self->{moduleList} };
-}
-
-# Returns an array of active modules
-sub getActiveModules {
-    my $self = shift;
-
-    my @activeModules;
-    foreach my $module ( @{ $self->{moduleList} } ) {
-        next if ( $self->{modules}->{$module}->{enabled} == 0 );
-
-        push( @activeModules, $module );
-    }
-
-    return @activeModules;
-}
-
-# Loads a module. The require() part is done in an eval{} block to catch parse
-# errors (Perl ftw!) so the mane thread doesn't break when reloading broken
-# module files.
-sub loadModule {
-    my $self    = shift;
-    my $module  = shift;
-    my $message = shift;
-    my $args    = ( defined( $_[0] ) ? join( ' ', @_ ) : '' );
-
-    # Lowercase and trim whitespace
-    my $moduleKey = lc($module);
-    $moduleKey =~ s/^\s+//;
-    $moduleKey =~ s/\s+$//;
-
-    # Check if module already loaded
-    if ( $self->{modules}->{$moduleKey} ) {
-        return {
-            status => 0,
-            code   => 0,
-            string => "Module '$module' already loaded (try reloading)"
-        };
-    }
-
-    # Check if module file exists
-    unless ( -e './modules/' . $moduleKey . '.pm' ) {
-        return {
-            status => 0,
-            code   => 1,
-            string => "Module '$module' not found"
-        };
-    }
-
-    my $modulePackage = ( "PinkieBot::Module::" . ucfirst($module) );
-
-    # Remove package from %INC if it exists so we don't get the cached version.
-    # This forces require() to actually re-parse the file again.
-    delete $INC{ './modules/' . $moduleKey . '.pm' };
-
-    # Include file and set up object in an eval{} block so we can catch parse
-    # errors in module files
-    eval {
-        require( './modules/' . $moduleKey . '.pm' );
-
-        $self->{modules}->{$moduleKey}->{object} =
-          $modulePackage->new( $self, $message, $args );
-        $self->{modules}->{$moduleKey}->{enabled} = 1;
-
-        push( @{ $self->{moduleList} }, $moduleKey );
-    };
-
-    # Return error if the eval{} block above failed (due parse error most
-    # likely)
-    if ($@) {
-        return { status => 0, code => 2, string => $@ };
-    }
-
-    # No perse errors, return success. Huzzah!
-    return { status => 1, code => -1, string => "Module '$module' loaded" };
-}
-
-# Unloads a module (if loaded) and reloads it. Note that non-stored variables
-# are not kept and the whole init()itialization function is called again.
-sub reloadModule {
-    my $self    = shift;
-    my $module  = shift;
-    my $message = shift;
-    my $args    = ( defined( $_[0] ) ? join( ' ', @_ ) : '' );
-
-    $self->unloadModule($module);
-    return $self->loadModule( $module, $message, $args );
-}
-
-# Unloads a module from memory.
-sub unloadModule {
-    my ( $self, $module ) = @_;
-    my $moduleKey = lc($module);
-
-    unless ( $self->{modules}->{$moduleKey} ) {
-        return {
-            status => 0,
-            code   => 0,
-            string => "Module '$module' not loaded"
-        };
-    }
-
-    delete( $self->{modules}->{$moduleKey} );
-    @{ $self->{moduleList} } =
-      grep { $_ ne $moduleKey } @{ $self->{moduleList} };
-
-    return { status => 1, code => -1, string => "Module '$module' unloaded" };
-}
-
-# Enables or activates a module
-sub enableModule {
-    my ( $self, $module ) = @_;
-    my $moduleKey = lc($module);
-
-    unless ( $self->{modules}->{$moduleKey} ) {
-        return {
-            status => 0,
-            code   => 0,
-            string => "Module '$module' not loaded"
-        };
-    }
-
-    if ( $self->{modules}->{$moduleKey}->{enabled} == 1 ) {
-        return {
-            status => 0,
-            code   => 1,
-            string => "Module '$module' already enabled"
-        };
-    }
-
-    $self->{modules}->{$moduleKey}->{enabled} = 1;
-
-    return { status => 1, code => -1, string => "Module '$module' enabled" };
-}
-
-# Disables a module. Note that it stays active in memory, including any
-# variables that might have changed. Disabled modules can be reenabled again,
-# using the same state (including variables) prior to disabling if other modules
-# didn't mess with it.
-sub disableModule {
-    my ( $self, $module ) = @_;
-    my $moduleKey = lc($module);
-
-    unless ( $self->{modules}->{$moduleKey} ) {
-        return {
-            status => 0,
-            code   => 0,
-            string => "Module '$module' not loaded"
-        };
-    }
-
-    if ( $self->{modules}->{$moduleKey}->{enabled} == 0 ) {
-        return {
-            status => 0,
-            code   => 1,
-            string => "Module '$module' already disabled"
-        };
-    }
-
-    $self->{modules}->{$moduleKey}->{enabled} = 0;
-
-    return { status => 1, code => -1, string => "Module '$module' disabled" };
-}
-
-# Registers code to be executed on certain IRC events of type $type. Valid types
-# are: connected, said, emoted, noticed, chanjoin, chanpart, topic, nick_change,
-# kicked, userquit, invited andmode. See CPAN pages for Bot::BasicBot for
-# parameter details and general usage. Event invited isn't in Bot::BasicBot and
-# is built in here. Code hooks are usually registered through module's init()
-# function,  but can theoretically be called on the fly from wherever inside a
-# module.
-sub registerHook {
-    my ( $self, $module, $type, $function ) = @_;
-
-    push( @{ $self->{modules}->{$module}->{hooks}->{$type} }, $function );
-
-    return {
-        status => 1,
-        code   => -1,
-        string => "Hook with type '$type' for module '$module' registered"
-    };
-}
-
-# Unregisters a code hook from a module. $function must contain the exact same
-# code used to register to unregister it.
-sub unregisterHook {
-    my ( $self, $module, $type, $function ) = @_;
-
-    unless (
-        grep( $function, @{ $self->{modules}->{$module}->{hooks}->{$type} } ) )
-    {
-        return {
-            status => 0,
-            code   => 0,
-            string =>
-              "Hook with type '$type' for module '$module' does not exist"
-        };
-    }
-
-    @{ $self->{modules}->{$module}->{hooks}->{$type} } =
-      grep { $_ != $function }
-      @{ $self->{modules}->{$module}->{hooks}->{$type} };
-
-    return {
-        status => 1,
-        code   => -1,
-        string => "Hook with type '$type' for module '$module' unregistered"
-    };
-}
-
-# Unregisters all hooks from a module
-sub unregisterHooks {
-    my ( $self, $module, $type ) = @_;
-
-    $self->{modules}->{$module}->{hooks}->{$type} = ();
-
-    return {
-        status => 1,
-        code   => -1,
-        string =>
-          "All hooks with type '$type' for module '$module' unregistered"
-    };
-}
-
-# Returns an array of functions with registered hooks for a module
-sub getHooks {
-    my ( $self, $module, $type ) = @_;
-
-    return @{ $self->{modules}->{$module}->{hooks}->{$type} };
-}
-
-# todo
-sub hookRegistered {
-    my ( $self, $module, $type ) = @_;
-
-    return @{ $self->{modules}->{$module}->{hooks}->{$type} };
-}
-
-# Process hooks of type $type. Loops through every active (!) module and calls
-# hooked function(s), if any. Function calls are done in an eval{} block to
-# catch logic errors and unloads the module if it happens to find an error.
-sub processHooks {
-    my ( $self, $type, $data ) = @_;
-
-    # For each module
-    while ( my ( $module, $moduleHash ) = each( %{ $self->{modules} } ) ) {
-        next if ( $moduleHash->{enabled} == 0 );
-
-        # For each hook of said type
-        foreach ( @{ $moduleHash->{hooks}->{$type} } ) {
-            eval { $self->$_($data); };
-
-            # Complain and unload module on error
-            if ($@) {
-                $self->notice(
-                    who     => $data->{who},
-                    channel => $data->{channel},
-                    body =>
-"\x02Module '$module' encountered an error and will be unloaded:\x0F $@",
-                    address => $data->{address}
-                );
-
-                $self->unloadModule($module);
-            }
-        }
-    }
-}
-
-# Returns whether module $module is loaded
-sub moduleLoaded {
-    my ( $self, $module ) = @_;
-    return ( exists( $self->{modules}->{ lc($module) } ) ? 1 : 0 );
-}
-
-# Returns whether module $module is both loaded and active
-sub moduleActive {
-    my ( $self, $module ) = @_;
+sub addressed {
+    my ( $self, $message ) = @_;
     return (
         (
-            $self->moduleLoaded($module)
-              && ( $self->{modules}->{ lc($module) }->{enabled} == 1 )
+            (
+                defined( $message->{address} )
+                  && ( $message->{address} eq $self->{nick} )
+            )
+              || ( $message->{channel} eq 'msg' )
         ) ? 1 : 0
     );
 }
 
-# Returns a module
-sub module {
-    my ( $self, $module ) = @_;
-    unless ( $self->moduleLoaded($module) ) {
-        return undef;
-    }
-    return $self->{modules}->{ lc($module) }->{object};
+sub addressedMsg {
+    my ( $self, $message ) = @_;
+    return ( ( $message->{channel} eq 'msg' ) ? 1 : 0 );
 }
 
-sub moduleFunc {
-    my ( $self, $module, $func, @args ) = @_[ ARG0, ARG1, ARG2, ARG3 .. $#_ ];
-    return $self->module($module)->$func();
+sub report {
+    my ( $self, $text, $message ) = @_;
+
+    if ( defined($message) ) {
+        $self->say(
+            who     => $message->{who},
+            channel => $message->{channel},
+            body    => $text,
+            address => $message->{address}
+        );
+    } else {
+        print "$text\n";
+    }
 }
+
+sub reply {
+    my ( $self, $text, $message ) = @_;
+    $self->say(
+        who     => $message->{who},
+        channel => $message->{channel},
+        body    => $text,
+        address => $message->{address}
+    );
+
+}
+
+sub join_channel {
+    my ( $self, $channel, $key ) = @_;
+    $key = '' unless defined($key);
+    $poe_kernel->post( $self->{IRCNAME}, 'join', $channel, $key );
+}
+
+sub part_channel {
+    my ( $self, $channel, $part_msg ) = @_;
+    $part_msg ||= ( 'Saphira v' . $version );
+    $poe_kernel->post( $self->{IRCNAME}, 'part', $channel, $part_msg );
+}
+
+1;
+
+package Saphira::Module;
+use warnings;
+use strict;
+
+sub new {
+    my ( $class, $bot, $wrapper, $message, $args ) = @_;
+
+    my $self = bless { bot => $bot, wrapper => $wrapper }, $class;
+
+    $self->init( $message, $args );
+
+    return $self;
+}
+
+sub registerHook {
+    my ( $self, $type, $code ) = @_;
+
+    my $module = ref($self);
+    $module =~ s/Saphira::Module::(.*)/$1/;
+    $module = lc($module);
+
+    $self->{bot}->registerHook( $module, $type, $code );
+}
+
+sub init { undef }
 
 1;
 
@@ -383,8 +210,9 @@ sub new {
         mysql_username => shift,
         mysql_password => shift,
         mysql_database => shift,
-        servers        => {},
-        bots           => {}
+
+        servers => {},
+        bots    => {}
     }, $class;
 
     $self->{dbd} = DBI->connect(
@@ -407,15 +235,14 @@ sub new {
 
     if ( $self->init() ) {
         return $self;
-    }
-    else {
+    } else {
         return undef;
     }
 }
 
 sub init {
     my $self = @_;
-    $ps = $self->{dbd}->prepare(
+    my $ps   = $self->{dbd}->prepare(
         'select
             *
         from
@@ -426,7 +253,7 @@ sub init {
         print '[E] MySQL select error: ' . $ps->errstr . "\n";
         return 0;
     }
-    while ( $result = $ps->fetchrow_hashref() ) {
+    while ( my $result = $ps->fetchrow_hashref() ) {
         $self->{servers}->{ $result->{id} } = new Saphira::API::Server(
             $result->{id},       $result->{servername},
             $result->{address},  $result->{port},
@@ -452,6 +279,273 @@ sub removeServer {
     delete $self->{servers}->{$id};
 }
 
+sub getAvailableModules {
+    my $self = shift;
+
+    my @availableModules = glob('modules/*.pm');
+    foreach (@availableModules) {
+        $_ =~ s/modules\/(.*)\.pm/$1/;
+    }
+
+    return @availableModules;
+}
+
+sub getLoadedModules {
+    my $self = shift;
+    return @{ $self->{moduleList} };
+}
+
+sub getActiveModules {
+    my $self = shift;
+
+    my @activeModules;
+    foreach my $module ( @{ $self->{moduleList} } ) {
+        next if ( $self->{modules}->{$module}->{enabled} == 0 );
+
+        push( @activeModules, $module );
+    }
+
+    return @activeModules;
+}
+
+sub loadModule {
+    my $self    = shift;
+    my $module  = shift;
+    my $message = shift;
+    my $args    = ( defined( $_[0] ) ? join( ' ', @_ ) : '' );
+
+    my $moduleKey = lc($module);
+    $moduleKey =~ s/^\s+//;
+    $moduleKey =~ s/\s+$//;
+
+    if ( $self->{modules}->{$moduleKey} ) {
+        return {
+            status => 0,
+            code   => 0,
+            string => "Module '$module' already loaded (try reloading)"
+        };
+    }
+
+    unless ( -e './modules/' . $moduleKey . '.pm' ) {
+        return {
+            status => 0,
+            code   => 1,
+            string => "Module '$module' not found"
+        };
+    }
+
+    my $modulePackage = ( "Saphira::Module::" . ucfirst($module) );
+
+    delete $INC{ './modules/' . $moduleKey . '.pm' };
+
+    eval {
+        require( './modules/' . $moduleKey . '.pm' );
+
+        $self->{modules}->{$moduleKey}->{object} =
+          $modulePackage->new( $self, $self->{wrapper}, $message, $args );
+        $self->{modules}->{$moduleKey}->{enabled} = 1;
+
+        push( @{ $self->{moduleList} }, $moduleKey );
+    };
+
+    if ($@) {
+        return { status => 0, code => 2, string => $@ };
+    }
+
+    return { status => 1, code => -1, string => "Module '$module' loaded" };
+}
+
+sub reloadModule {
+    my $self    = shift;
+    my $module  = shift;
+    my $message = shift;
+    my $args    = ( defined( $_[0] ) ? join( ' ', @_ ) : '' );
+
+    $self->unloadModule($module);
+    return $self->loadModule( $module, $message, $args );
+}
+
+sub unloadModule {
+    my ( $self, $module ) = @_;
+    my $moduleKey = lc($module);
+
+    unless ( $self->{modules}->{$moduleKey} ) {
+        return {
+            status => 0,
+            code   => 0,
+            string => "Module '$module' not loaded"
+        };
+    }
+
+    delete( $self->{modules}->{$moduleKey} );
+    @{ $self->{moduleList} } =
+      grep { $_ ne $moduleKey } @{ $self->{moduleList} };
+
+    return { status => 1, code => -1, string => "Module '$module' unloaded" };
+}
+
+sub enableModule {
+    my ( $self, $module ) = @_;
+    my $moduleKey = lc($module);
+
+    unless ( $self->{modules}->{$moduleKey} ) {
+        return {
+            status => 0,
+            code   => 0,
+            string => "Module '$module' not loaded"
+        };
+    }
+
+    if ( $self->{modules}->{$moduleKey}->{enabled} == 1 ) {
+        return {
+            status => 0,
+            code   => 1,
+            string => "Module '$module' already enabled"
+        };
+    }
+
+    $self->{modules}->{$moduleKey}->{enabled} = 1;
+
+    return { status => 1, code => -1, string => "Module '$module' enabled" };
+}
+
+sub disableModule {
+    my ( $self, $module ) = @_;
+    my $moduleKey = lc($module);
+
+    unless ( $self->{modules}->{$moduleKey} ) {
+        return {
+            status => 0,
+            code   => 0,
+            string => "Module '$module' not loaded"
+        };
+    }
+
+    if ( $self->{modules}->{$moduleKey}->{enabled} == 0 ) {
+        return {
+            status => 0,
+            code   => 1,
+            string => "Module '$module' already disabled"
+        };
+    }
+
+    $self->{modules}->{$moduleKey}->{enabled} = 0;
+
+    return { status => 1, code => -1, string => "Module '$module' disabled" };
+}
+
+sub registerHook {
+    my ( $self, $module, $type, $function ) = @_;
+
+    push( @{ $self->{modules}->{$module}->{hooks}->{$type} }, $function );
+
+    return {
+        status => 1,
+        code   => -1,
+        string => "Hook with type '$type' for module '$module' registered"
+    };
+}
+
+sub unregisterHook {
+    my ( $self, $module, $type, $function ) = @_;
+
+    unless (
+        grep( $function, @{ $self->{modules}->{$module}->{hooks}->{$type} } ) )
+    {
+        return {
+            status => 0,
+            code   => 0,
+            string =>
+              "Hook with type '$type' for module '$module' does not exist"
+        };
+    }
+
+    @{ $self->{modules}->{$module}->{hooks}->{$type} } =
+      grep { $_ != $function }
+      @{ $self->{modules}->{$module}->{hooks}->{$type} };
+
+    return {
+        status => 1,
+        code   => -1,
+        string => "Hook with type '$type' for module '$module' unregistered"
+    };
+}
+
+sub unregisterHooks {
+    my ( $self, $module, $type ) = @_;
+
+    $self->{modules}->{$module}->{hooks}->{$type} = ();
+
+    return {
+        status => 1,
+        code   => -1,
+        string =>
+          "All hooks with type '$type' for module '$module' unregistered"
+    };
+}
+
+sub getHooks {
+    my ( $self, $module, $type ) = @_;
+
+    return @{ $self->{modules}->{$module}->{hooks}->{$type} };
+}
+
+sub hookRegistered {
+    my ( $self, $module, $type ) = @_;
+
+    return @{ $self->{modules}->{$module}->{hooks}->{$type} };
+}
+
+sub processHooks {
+    my ( $self, $type, $server, $data ) = @_;
+    while ( my ( $module, $moduleHash ) = each( %{ $self->{modules} } ) ) {
+        next if ( $moduleHash->{enabled} == 0 );
+        foreach ( @{ $moduleHash->{hooks}->{$type} } ) {
+            eval { $self->$_( $server, $data ); };
+            if ($@) {
+                $server->notice(
+                    who     => $data->{who},
+                    channel => $data->{channel},
+                    body =>
+"\x02Module '$module' encountered an error and will be unloaded:\x0F $@",
+                    address => $data->{address}
+                );
+
+                $self->unloadModule($module);
+            }
+        }
+    }
+}
+
+sub moduleLoaded {
+    my ( $self, $module ) = @_;
+    return ( exists( $self->{modules}->{ lc($module) } ) ? 1 : 0 );
+}
+
+sub moduleActive {
+    my ( $self, $module ) = @_;
+    return (
+        (
+            $self->moduleLoaded($module)
+              && ( $self->{modules}->{ lc($module) }->{enabled} == 1 )
+        ) ? 1 : 0
+    );
+}
+
+sub module {
+    my ( $self, $module ) = @_;
+    unless ( $self->moduleLoaded($module) ) {
+        return undef;
+    }
+    return $self->{modules}->{ lc($module) }->{object};
+}
+
+sub moduleFunc {
+    my ( $self, $module, $func, @args ) =
+      @_[ $_[0], $_[1], $_[2], $_[3] .. $#_ ];
+    return $self->module($module)->$func();
+}
+
 1;
 
 package Saphira::API::DBExt;
@@ -468,13 +562,15 @@ sub new {
 
 sub handleQuery {
     my ( $self, $queryType ) = @_;
-    return unless defined $__queries{$queryType}->{query};
-    return unless defined $__queries{$queryType}->{fields};
-    return unless $__queries{$queryType}->{fields} gt 0;
+    my $package = ref $self;
+    return unless defined $self->{__queries}->{$queryType}->{query};
+    return unless defined $self->{__queries}->{$queryType}->{fields};
+    return unless $self->{__queries}->{$queryType}->{fields} gt 0;
     my $ps =
-      $self->{wrapper}->{dbd}->prepare( $__queries{$queryType}->{query} );
+      $self->{wrapper}->{dbd}
+      ->prepare( $self->{__queries}->{$queryType}->{query} );
     my $n = 1;
-    foreach $field ( @{ $__queries->{fields} } ) {
+    foreach my $field ( @{ $self->{$__queries}->{$queryType}->{fields} } ) {
         $ps->bind_param( $n, $self->{$field} );
         $n++;
     }
@@ -488,20 +584,11 @@ package Saphira::API::Server;
 
 use base 'Saphira::API::DBExt';
 
-our $__queries = {
-    insert => {
-        query =>
-'update servers set address = ?, port = ?, secure = ?, password = ?, nickservpassword = ? where id = ?',
-        fields =>
-          ( 'address', 'port', 'secure', 'password', 'nickservpassword', 'id' )
-    },
-    select_channels {
-        query  => 'select * from channels where state = 1 and server = ?',
-        fields => ('id')
-    }
-  } sub new {
+sub new {
     my $class = shift;
-    my $self  = bless {
+    my $self = bless {}, $class;
+    push $self,
+      {
         id           => shift,
         servername   => shift,
         address      => shift,
@@ -514,18 +601,34 @@ our $__queries = {
         bot          => 0,
         active       => 0,
         channels     => {},
-        users        => {}
-    }, $class;
-
+        users        => {},
+        __queries    => {
+            insert => {
+                query =>
+'update servers set address = ?, port = ?, secure = ?, password = ?, nickservpassword = ? where id = ?',
+                fields => (
+                    'address',          'port',
+                    'secure',           'password',
+                    'nickservpassword', 'id'
+                )
+            },
+            select_channels {
+                query =>
+                  'select * from channels where state = 1 and server = ?',
+                fields => ('id')
+            }
+        }
+      };
     $self->init();
 
     return $self;
 }
 
 sub init {
+    my $self = shift;
     $self->{active} = 1;
     my $ps = $self->handleQuery('select_channels');
-    while ( $result = $ps->fetchrow_hashref() ) {
+    while ( my $result = $ps->fetchrow_hashref() ) {
         $self->{channels}->{ $result->{id} } =
           new Saphira::API::Channel( $self, $result->{id}, $result->{name},
             $result->{password}, $result->{state}, 1, $result->{log} );
@@ -534,22 +637,22 @@ sub init {
 }
 
 sub getServerName {
-    my $self = @_;
+    my $self = shift;
     return $self->{servername};
 }
 
 sub getServerAddress {
-    my $self = @_;
+    my $self = shift;
     return $self->{address};
 }
 
 sub getServerPort {
-    my $self = @_;
+    my $self = shift;
     return $self->{port};
 }
 
 sub useSecureConnection {
-    my $self = @_;
+    my $self = shift;
     return $self->{secure};
 }
 
@@ -561,7 +664,7 @@ sub getChannel {
 }
 
 sub getWrapper {
-    my $self = @_;
+    my $self = shift;
     return $self->{wrapper};
 }
 
@@ -572,22 +675,37 @@ sub setPassword {
 }
 
 sub getUsers {
-    my $self = @_;
+    my $self = shift;
     return @{ values $self->{users} };
 }
 
 sub addUser {
     my ( $self, $user ) = @_;
-    return unless not defined $self->{users}->{ $user->getUsername() };
-    $self->{users}->{ $user->getUsername() } = $user;
+    return unless not defined $self->{users}->{ $user->getRawUsername() };
+    $self->{users}->{ $user->getRawUsername() } = $user;
     return 1;
 }
 
 sub removeUser {
-    my ( $self, $username ) = @_;
-    return unless defined $self->{users}->{$username};
-    $self->{users}->{$username} = undef;
+    my ( $self, $raw_username ) = @_;
+    return unless defined $self->{users}->{$raw_username};
+    delete $self->{users}->{$raw_username};
     return 1;
+}
+
+sub joinChannel {
+    my ( $self, $channel, $key ) = @_;
+    my @channel = [ split( ',', $channel ) ];
+    foreach my $chan (@channel) {
+        $self->{bot}->join_channel( $chan, $key );
+    }
+}
+
+sub partChannel {
+    my ( $self, $channel, $message ) = @_;
+    return unless defined $self->{bot}->{server}->{channels}->{$channel};
+    $self->{bot}->part_channel( $channel, $message );
+    delete $self->{channels}->{$channel};
 }
 
 sub isActive {
@@ -601,13 +719,13 @@ sub _setActive {
 }
 
 sub _getServerId {
-    my $self = @_;
+    my $self = shift;
     return $self->{id};
 }
 
 sub _getChannelId {
     my ( $self, $channelName ) = @_;
-    foreach $key ( keys %{ $self->{channels} } ) {
+    foreach my $key ( keys %{ $self->{channels} } ) {
         if ( $self->{channels}->{$key}->{name} eq $channelName ) {
             return $key;
         }
@@ -621,83 +739,65 @@ package Saphira::API::Channel;
 
 use base 'Saphira::API::DBExt';
 
-our $__queries = {
-    insert => {
-        query => 'insert into channels (
-                server, name, log, password
-            ) values (
-                ?, ?, ?, ?
-            )',
-        fields => ( 'server', 'name', 'logging', 'password' )
-    },
-    update => {
-        query => 'update channels set
-                      server = ?,
-                      log = ?,
-                      password = ?
-                  where id = ?',
-        fields => ( 'server', 'logging', 'password', 'id' )
-    }
-  }
-
-  sub new {
+sub new {
     my $class = shift;
-    my $self  = bless {
+    my $self = bless {}, $class;
+    push $self, {
         server     => shift,
         id         => shift,
         name       => shift,
         password   => shift,
         state      => shift,
         persistent => shift,
-        logging    => shift
-    }, $class;
+        logging    => shift,
+        __queries  => {
+            insert => {
+                query => 'insert into channels (
+                server, name, log, password
+            ) values (
+                ?, ?, ?, ?
+            )',
+                fields => ( 'server', 'name', 'logging', 'password' )
+            },
+            update => {
+                query => 'update channels set
+                      server = ?,
+                      log = ?,
+                      password = ?,
+                      state = ?
+                  where id = ?',
+                fields => ( 'server', 'logging', 'password', 'state', 'id' )
+            }
+        }
+    };
 
     $self->init();
 
     return $self;
 }
 
+sub getBot {
+    my $self = shift;
+    return $self->{server}->{bot};
+}
+
 sub getServer {
-    my $self = @_;
+    my $self = shift;
     return $self->{server};
 }
 
 sub getId {
-    my $self = @_;
+    my $self = shift;
     return $self->{id};
 }
 
 sub getName {
-    my $self = @_;
+    my $self = shift;
     return $self->{name};
 }
 
-sub getModes {
-    my $self = @_;
-
-    #TODO: finish
-}
-
-sub setModes {
-    my ( $self, $newModes ) = @_;
-
-    #TODO: finish
-}
-
-sub getTitle {
-    my $self = @_;
-
-    #TODO: finish
-}
-
-sub setTitle {
-    my ( $self, $newTitle ) = @_;
-
-    #TODO: finish
-}
-
 sub isPersistent {
-    my $self = @_;
+    my $self = shift;
     return $self->{persistent};
 }
 
@@ -707,29 +807,36 @@ sub setPersistency {
     $persistency = ( $persistency > 0 ) ? 1 : 0;
     return unless $self->{persistent} ne $persistency;
     if ( $persistency and $self->{state} eq 0 ) {
-        $self->_enalbe();
-    }
-    else if ( $persistency and $self->{state} eq -1 ) {
+        $self->_enable();
+    } elsif ( $persistency and $self->{state} eq -1 ) {
         $self->_insert();
-    }
-    else {
+    } else {
         $self->_disable();
     }
 }
 
 sub _insert {
-    my $self = @_;
-    $self->{state} = 1;
+    my $self = shift;
+    my $ps   = $self->handleQuery('insert');
+    if ( !$ps->err ) {
+        $self->{state} = 1;
+        return 1;
+    }
+    return 0;
 }
 
 sub _disable {
-    my $self = @_;
+    my $self = shift;
     $self->{state} = 0;
+    my $ps = $self->handleQuery('update');
+    return $ps->err;
 }
 
 sub _enable {
-    my $self = @_;
+    my $self = shift;
     $self->{state} = 1;
+    my $ps = $self->handleQuery('update');
+    return $ps->err;
 }
 
 1;
@@ -737,102 +844,117 @@ sub _enable {
 package Saphira::API::User;
 
 use base 'Saphira::API::DBExt';
-use Digest::SHA 'sha512_hex';
 
-our $__queries = {
-    insert => {
-        query => 'insert into users (
+sub new {
+    my $class = shift;
+    my $self = bless {}, $class;
+    push $self, {
+        wrapper      => shift,
+        server       => shift,
+        id           => shift,
+        nickname     => shift,
+        username     => shift,
+        raw_username => shift,
+        lastlogin    => shift,
+        op           => shift,
+        permissions  => {},
+        __queries    => {
+            insert => {
+                query => 'insert into users (
                 server, name, log, password
             ) values (
                 ?, ?, ?, ?
             )',
-        fields => ( 'server', 'name', 'logging', 'password' )
-    },
-    update_pass => {
-        query => 'update users set
+                fields => ( 'server', 'name', 'logging', 'password' )
+            },
+            update_op => {
+                query => 'update
+                users
+            set
+                op = ?
+            where
+                id = ?',
+                fields => ( 'op', 'id' )
+            },
+            update_password => {
+                query => 'update
+                users
+            set
                 password = ?
             where
                 id = ?',
-        fields => ( 'password', 'id' )
-    },
-    update_lastlogin => {
-        query => 'update users set
-                      lastlogin = now()
-                  where id = ?',
-        fields => ('id')
-    },
-    select_permissions => {
-        query => 'select
+                fields => ( 'password', 'op', 'id' )
+            },
+            update_lastlogin => {
+                query => 'update
+                users
+            set
+                lastlogin = now()
+            where
+                id = ?',
+                fields => ('id')
+            },
+            select_permissions => {
+                query => 'select
                 channelid, level
             from
                 permissios
             where
                 userid = ?',
-        fields => ('id')
-    }
-  }
+                fields => ('id')
+            }
+          }
 
-  sub new {
-    my $class = shift;
-    my $self  = bless {
-        wrapper     => shift,
-        server      => shift,
-        id          => shift,
-        username    => shift,
-        identity    => shift,
-        host        => shift,
-        lastlogin   => shift,
-        permissions => {}
-    }, $class;
+    };
 
     $self->init();
 
     return $self;
 }
 
-sub getUser {
-    my $self = @_;
-    return $self->{name};
+sub getUsername {
+    my $self = shift;
+    return $self->{username};
 }
 
-sub getIdentity {
-    my $self = @_;
-    return $self->{identity};
+sub getNickname {
+    my $self = shift;
+    return $self->{nickname};
 }
 
-sub getHost {
-    my $self = @_;
-    return $self->{host};
+sub setNickname {
+    my ( $self, $nick ) = @_;
+    $self->{nickname} = $nick;
+}
+
+sub getRawUsername {
+    my $self = shift;
+    return $self->{raw_username};
 }
 
 sub getPermission {
     my ( $self, $chan ) = @_;
+    return 9 if $self->{op};
     my $chanId = undef;
-    if ( $chan ~= /^\d+$/ ) {
+    if ( $chan =~ /^\d+$/ ) {
         $chanId = int($chan);
-    }
-    else if ( $chan ~= /^#\w+$/ ) {
+    } elsif ( $chan =~ /^#\w+$/ ) {
         $chanId = $self->{server}->getChannel($chan);
-    }
-    else if ( ref $chan eq 'Saphira::API::Channel' ) {
+    } elsif ( ref $chan eq 'Saphira::API::Channel' ) {
         $chanId = $chan->getId();
     }
-    return unless defined $chanId;
-    return unless defined $self->{permissions}->{$chanId};
+    return 0 unless defined $chanId and defined $self->{permissions}->{$chanId};
     return $self->{permissions}->{$chanId};
 }
 
 sub setPermission {
     my ( $self, $chan, $permissionLevel ) = @_;
-    my ( $self, $chan ) = @_;
     my $chanId = undef;
-    if ( $chan ~= /^\d+$/ ) {
+    if ( $chan =~ /^\d+$/ ) {
         $chanId = int($chan);
-    }
-    else if ( $chan ~= /^#\w+$/ ) {
+    } elsif ( $chan =~ /^#\w+$/ ) {
         $chanId = $self->{server}->getChannel($chan);
-    }
-    else if ( ref $chan eq 'Saphira::API::Channel' ) {
+    } elsif ( ref $chan eq 'Saphira::API::Channel' ) {
         $chanId = $chan->getId();
     }
     return 0 unless defined $chanId;
@@ -841,35 +963,39 @@ sub setPermission {
     return 1;
 }
 
+sub isChannelOperator {
+    my ( $self, $chan ) = @_;
+    my $state = $self->{server}->{bot}->pocoirc();
+    return
+         $state->is_channel_operator( $chan, $self->{nick} )
+      || $state->is_channel_owner( $chan, $self->{nick} )
+      || $state->is_channel_halfop( $chan, $self->{nick} );
+}
+
 sub _reloadPermissions {
     my $self = @_;
-    $ps = $self->handleQuery('select_permissions');
-    while ( $fields = $ps->fetchrow_hashref() ) {
-        $self->{permissions}->{ $fields->{chanid} } = int $fields->{level};
-    }
+    $self->{permissions} = {};
+    $self->loadPermissions();
 }
 
 sub _storePermission {
     my ( $self, $userId, $chanId, $level ) = @_;
     my $ps = $self->{wrapper}->{dbh}->prepare(
         'insert into permissions(
-            userid,
-            channelid,
-            level
+            userid, channelid, level
         )
         values(
-            ?,
-            ?,
-            ?
+            ?, ?, ?
         )
         on duplicate key update level=?'
     );
     $ps->execute( $userId, $chanId, $level, $level );
     if ( $ps->err ) {
         print "[E] Error accessing the MySQL database...\n\t$ps->errstr)";
-    }
-    else {
-        #TODO!
+        return 0;
+    } else {
+        $self->{server}->{users}->{$userId}->{$chanId} = $level;
+        return 1;
     }
 }
 
@@ -884,7 +1010,7 @@ sub getLastLogin {
 }
 
 sub login {
-    my ( $wrapper, $server, $username, $identity, $host, $password ) = @_;
+    my ( $wrapper, $server, $nickname, $username, $raw_nick, $password ) = @_;
     $password = sha512_hex($password);
     my $ps = $wrapper->{dbd}->prepare(
         'select
@@ -897,24 +1023,65 @@ sub login {
     my $result = $ps->execute( $username, $password );
     if ( $ps->err ) {
         print "[E] Error accessing the MySQL database...\n\t$ps->errstr)";
-    }
-    else {
+        return 0;
+    } else {
         my $result = $ps->fetchrow_hashref();
         return 0 unless defined $result;
-        $wrapper->post( $result->{lastlogin}, "Some more shit here" );
         my $user =
-          new Saphira::API::User( $wrapper, $server, $result->{id}, $username,
-            $identity, $host, $result->{lastlogin} );
-
-        #TODO: Search for permissions and put them in the object
+          new Saphira::API::User( $wrapper, $server, $result->{id}, $nickname,
+            $username, $raw_nick, $result->{lastlogin} );
+        $user->loadPermissions();
         $server->addUser($user);
-        return $user;
+        return 1;
     }
 }
 
+sub loadPermissions {
+    my $self = shift;
+    my $ps   = $wrapper->{dbd}->prepare(
+        'select
+            channelid,level
+        from
+            permissions
+        where
+            channelid in (
+                select
+                    id
+                from
+                    channels
+                where
+                    server = ?
+            ) and userid = ?'
+    );
+    my $result = $ps->execute( $self->{id}, $self->{server}->{id} );
+    return 0 unless not $ps->err;
+    while ( my $fields = $result->fetchrow_hashref() ) {
+        $self->{permissions}->{ $fields->{channelid} } = $fields->{level};
+    }
+    return 1;
+}
+
 sub logout {
-    my $self = @_;
+    my $self = shift;
     return $self->{server}->removeUser($self);
+}
+
+sub isOp {
+    my $self = shift;
+    return $self->{op};
+}
+
+sub setOp {
+    my ( $self, $op ) = @_;
+    $self->{op} = int($op) > 0;
+    $self->_update();
+}
+
+sub setPassword {
+    my ( $self, $password ) = @_;
+    $self->{password} = $password;
+
+    #TODO: finish
 }
 
 1;
