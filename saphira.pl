@@ -1,36 +1,6 @@
 #!/usr/bin/env perl
 use warnings;
 use strict;
-use Config::IniFiles;
-
-unless ( -e 'saphira.ini' ) {
-    print
-"[E] No configuration file found. Creating one with placeholder variables. Please\n"
-      . "\tmodify saphira.ini and restart the bot.\n";
-
-    my $cfg = Config::IniFiles->new();
-
-    $cfg->newval( 'mysql', 'host',     'localhost' );
-    $cfg->newval( 'mysql', 'username', 'root' );
-    $cfg->newval( 'mysql', 'password', '' );
-    $cfg->newval( 'mysql', 'database', 'saphira' );
-
-    $cfg->newval( 'irc', 'autoload', 'manage' );
-
-    $cfg->WriteConfig('saphira.ini');
-
-    exit;
-}
-
-my $cfg = Config::IniFiles->new( -file => 'saphira.ini' );
-
-my $wrapper = new Saphira::Bot::Wrapper(
-    $cfg->val( 'mysql', 'host' ),
-    $cfg->val( 'mysql', 'username' ),
-    $cfg->val( 'mysql', 'password' ),
-    $cfg->val( 'mysql', 'database' ),
-    [ split( ',', $cfg->val( 'irc', 'autoload' ) ) ]
-);
 
 package Saphira::Bot;
 use base 'Bot::BasicBot';
@@ -117,10 +87,7 @@ sub addressed {
     my ( $self, $message ) = @_;
     return (
         (
-            (
-                defined( $message->{address} )
-                  && ( $message->{address} eq $self->{nick} )
-            )
+                 ( defined( $message->{address} ) && ( $message->{address} eq $self->{nick} ) )
               || ( $message->{channel} eq 'msg' )
         ) ? 1 : 0
     );
@@ -199,6 +166,185 @@ sub init { undef }
 
 1;
 
+package Saphira::API::DBExt;
+
+use DBI;
+
+our $__queries = {};
+
+sub new {
+    my $class = shift;
+    my $self = bless { wrapper => shift }, $class;
+    return $self;
+}
+
+sub handleQuery {
+    my ( $self, $queryType ) = @_;
+    my $package = ref $self;
+    return unless defined $self->{__queries}->{$queryType}->{query};
+    return unless defined $self->{__queries}->{$queryType}->{fields};
+    return unless $self->{__queries}->{$queryType}->{fields} gt 0;
+    my $ps = $self->{wrapper}->{dbd}->prepare( $self->{__queries}->{$queryType}->{query} );
+    my $n  = 1;
+    foreach my $field ( @{ $self->{$__queries}->{$queryType}->{fields} } ) {
+        $ps->bind_param( $n, $self->{$field} );
+        $n++;
+    }
+    $ps->execute();
+    return $ps;
+}
+
+1;
+
+package Saphira::API::Server;
+
+use base 'Saphira::API::DBExt';
+
+sub new {
+    my $class = shift;
+    my $self = bless {}, $class;
+    push $self,
+      {
+        id           => shift,
+        servername   => shift,
+        address      => shift,
+        port         => shift,
+        secure       => shift,
+        username     => shift,
+        password     => shift,
+        nickpassword => shift,
+        wrapper      => shift,
+        bot          => 0,
+        active       => 0,
+        channels     => {},
+        users        => {},
+        __queries    => {
+            insert => {
+                query  => 'update servers set address = ?, port = ?, secure = ?, password = ?, nickservpassword = ? where id = ?',
+                fields => ( 'address', 'port', 'secure', 'password', 'nickservpassword', 'id' )
+            },
+            select_channels => {
+                query  => 'select * from channels where state = 1 and server = ?',
+                fields => ('id')
+            }
+        }
+      };
+    $self->init();
+
+    return $self;
+}
+
+sub init {
+    my $self = shift;
+    $self->{active} = 1;
+    my $ps = $self->handleQuery('select_channels');
+    while ( my $result = $ps->fetchrow_hashref() ) {
+        $self->{channels}->{ $result->{id} } =
+          new Saphira::API::Channel( $self, $result->{id}, $result->{name},
+            $result->{password}, $result->{state}, 1, $result->{log} );
+    }
+    $self->{bot} = new Saphira::Bot( $self, $self->{wrapper} );
+}
+
+sub getServerName {
+    my $self = shift;
+    return $self->{servername};
+}
+
+sub getServerAddress {
+    my $self = shift;
+    return $self->{address};
+}
+
+sub getServerPort {
+    my $self = shift;
+    return $self->{port};
+}
+
+sub useSecureConnection {
+    my $self = shift;
+    return $self->{secure};
+}
+
+sub getChannel {
+    my ( $self, $channelName ) = @_;
+    my $key = $self->getChannelId($channelName);
+    return unless defined $key;
+    return $self->{channels}->{$key};
+}
+
+sub getWrapper {
+    my $self = shift;
+    return $self->{wrapper};
+}
+
+sub setPassword {
+    my ( $self, $password ) = @_;
+    $self->{password} = $password;
+    $self->_update();
+}
+
+sub getUsers {
+    my $self = shift;
+    return @{ values $self->{users} };
+}
+
+sub addUser {
+    my ( $self, $user ) = @_;
+    return unless not defined $self->{users}->{ $user->getRawUsername() };
+    $self->{users}->{ $user->getRawUsername() } = $user;
+    return 1;
+}
+
+sub removeUser {
+    my ( $self, $raw_username ) = @_;
+    return unless defined $self->{users}->{$raw_username};
+    delete $self->{users}->{$raw_username};
+    return 1;
+}
+
+sub joinChannel {
+    my ( $self, $channel, $key ) = @_;
+    my @channel = [ split( ',', $channel ) ];
+    foreach my $chan (@channel) {
+        $self->{bot}->join_channel( $chan, $key );
+    }
+}
+
+sub partChannel {
+    my ( $self, $channel, $message ) = @_;
+    return unless defined $self->{bot}->{server}->{channels}->{$channel};
+    $self->{bot}->part_channel( $channel, $message );
+    delete $self->{channels}->{$channel};
+}
+
+sub isActive {
+    my $self = shift;
+    return $self->{active};
+}
+
+sub _setActive {
+    my ( $self, $active ) = @_;
+    $self->{active} = ( $active > 0 );
+}
+
+sub _getServerId {
+    my $self = shift;
+    return $self->{id};
+}
+
+sub _getChannelId {
+    my ( $self, $channelName ) = @_;
+    foreach my $key ( keys %{ $self->{channels} } ) {
+        if ( $self->{channels}->{$key}->{name} eq $channelName ) {
+            return $key;
+        }
+    }
+    return undef;
+}
+
+1;
+
 package Saphira::Wrapper;
 
 use DBI;
@@ -216,11 +362,7 @@ sub new {
     }, $class;
 
     $self->{dbd} = DBI->connect(
-        sprintf(
-            'DBI:mysql:%s;host=%s',
-            $self->{mysql_database},
-            $self->{mysql_host}
-        ),
+        sprintf( 'DBI:mysql:%s;host=%s', $self->{mysql_database}, $self->{mysql_host} ),
         $self->{mysql_username},
         $self->{mysql_password},
         { 'mysql_enable_utf8' => 1 }
@@ -241,7 +383,7 @@ sub new {
 }
 
 sub init {
-    my $self = @_;
+    my $self = shift;
     my $ps   = $self->{dbd}->prepare(
         'select
             *
@@ -255,11 +397,9 @@ sub init {
     }
     while ( my $result = $ps->fetchrow_hashref() ) {
         $self->{servers}->{ $result->{id} } = new Saphira::API::Server(
-            $result->{id},       $result->{servername},
-            $result->{address},  $result->{port},
-            $result->{secure},   $result->{username},
-            $result->{password}, $result->{nickservpassword},
-            $self
+            $result->{id},       $result->{servername},       $result->{address},
+            $result->{port},     $result->{secure},           $result->{username},
+            $result->{password}, $result->{nickservpassword}, $self
         );
         $self->{bots}->{ $result->{id} } =
           new Saphira::Bot( $self->{servers}->{ $result->{id} }, $self );
@@ -449,20 +589,16 @@ sub registerHook {
 sub unregisterHook {
     my ( $self, $module, $type, $function ) = @_;
 
-    unless (
-        grep( $function, @{ $self->{modules}->{$module}->{hooks}->{$type} } ) )
-    {
+    unless ( grep( $function, @{ $self->{modules}->{$module}->{hooks}->{$type} } ) ) {
         return {
             status => 0,
             code   => 0,
-            string =>
-              "Hook with type '$type' for module '$module' does not exist"
+            string => "Hook with type '$type' for module '$module' does not exist"
         };
     }
 
     @{ $self->{modules}->{$module}->{hooks}->{$type} } =
-      grep { $_ != $function }
-      @{ $self->{modules}->{$module}->{hooks}->{$type} };
+      grep { $_ != $function } @{ $self->{modules}->{$module}->{hooks}->{$type} };
 
     return {
         status => 1,
@@ -479,8 +615,7 @@ sub unregisterHooks {
     return {
         status => 1,
         code   => -1,
-        string =>
-          "All hooks with type '$type' for module '$module' unregistered"
+        string => "All hooks with type '$type' for module '$module' unregistered"
     };
 }
 
@@ -506,8 +641,7 @@ sub processHooks {
                 $server->notice(
                     who     => $data->{who},
                     channel => $data->{channel},
-                    body =>
-"\x02Module '$module' encountered an error and will be unloaded:\x0F $@",
+                    body    => "\x02Module '$module' encountered an error and will be unloaded:\x0F $@",
                     address => $data->{address}
                 );
 
@@ -524,12 +658,7 @@ sub moduleLoaded {
 
 sub moduleActive {
     my ( $self, $module ) = @_;
-    return (
-        (
-            $self->moduleLoaded($module)
-              && ( $self->{modules}->{ lc($module) }->{enabled} == 1 )
-        ) ? 1 : 0
-    );
+    return ( ( $self->moduleLoaded($module) && ( $self->{modules}->{ lc($module) }->{enabled} == 1 ) ) ? 1 : 0 );
 }
 
 sub module {
@@ -544,193 +673,6 @@ sub moduleFunc {
     my ( $self, $module, $func, @args ) =
       @_[ $_[0], $_[1], $_[2], $_[3] .. $#_ ];
     return $self->module($module)->$func();
-}
-
-1;
-
-package Saphira::API::DBExt;
-
-use DBI;
-
-our $__queries = {};
-
-sub new {
-    my $class = shift;
-    my $self = bless { wrapper => shift }, $class;
-    return $self;
-}
-
-sub handleQuery {
-    my ( $self, $queryType ) = @_;
-    my $package = ref $self;
-    return unless defined $self->{__queries}->{$queryType}->{query};
-    return unless defined $self->{__queries}->{$queryType}->{fields};
-    return unless $self->{__queries}->{$queryType}->{fields} gt 0;
-    my $ps =
-      $self->{wrapper}->{dbd}
-      ->prepare( $self->{__queries}->{$queryType}->{query} );
-    my $n = 1;
-    foreach my $field ( @{ $self->{$__queries}->{$queryType}->{fields} } ) {
-        $ps->bind_param( $n, $self->{$field} );
-        $n++;
-    }
-    $ps->execute();
-    return $ps;
-}
-
-1;
-
-package Saphira::API::Server;
-
-use base 'Saphira::API::DBExt';
-
-sub new {
-    my $class = shift;
-    my $self = bless {}, $class;
-    push $self,
-      {
-        id           => shift,
-        servername   => shift,
-        address      => shift,
-        port         => shift,
-        secure       => shift,
-        username     => shift,
-        password     => shift,
-        nickpassword => shift,
-        wrapper      => shift,
-        bot          => 0,
-        active       => 0,
-        channels     => {},
-        users        => {},
-        __queries    => {
-            insert => {
-                query =>
-'update servers set address = ?, port = ?, secure = ?, password = ?, nickservpassword = ? where id = ?',
-                fields => (
-                    'address',          'port',
-                    'secure',           'password',
-                    'nickservpassword', 'id'
-                )
-            },
-            select_channels {
-                query =>
-                  'select * from channels where state = 1 and server = ?',
-                fields => ('id')
-            }
-        }
-      };
-    $self->init();
-
-    return $self;
-}
-
-sub init {
-    my $self = shift;
-    $self->{active} = 1;
-    my $ps = $self->handleQuery('select_channels');
-    while ( my $result = $ps->fetchrow_hashref() ) {
-        $self->{channels}->{ $result->{id} } =
-          new Saphira::API::Channel( $self, $result->{id}, $result->{name},
-            $result->{password}, $result->{state}, 1, $result->{log} );
-    }
-    $self->{bot} = new Saphira::Bot( $self, $self->{wrapper} );
-}
-
-sub getServerName {
-    my $self = shift;
-    return $self->{servername};
-}
-
-sub getServerAddress {
-    my $self = shift;
-    return $self->{address};
-}
-
-sub getServerPort {
-    my $self = shift;
-    return $self->{port};
-}
-
-sub useSecureConnection {
-    my $self = shift;
-    return $self->{secure};
-}
-
-sub getChannel {
-    my ( $self, $channelName ) = @_;
-    my $key = $self->getChannelId($channelName);
-    return unless defined $key;
-    return $self->{channels}->{$key};
-}
-
-sub getWrapper {
-    my $self = shift;
-    return $self->{wrapper};
-}
-
-sub setPassword {
-    my ( $self, $password ) = @_;
-    $self->{password} = $password;
-    $self->_update();
-}
-
-sub getUsers {
-    my $self = shift;
-    return @{ values $self->{users} };
-}
-
-sub addUser {
-    my ( $self, $user ) = @_;
-    return unless not defined $self->{users}->{ $user->getRawUsername() };
-    $self->{users}->{ $user->getRawUsername() } = $user;
-    return 1;
-}
-
-sub removeUser {
-    my ( $self, $raw_username ) = @_;
-    return unless defined $self->{users}->{$raw_username};
-    delete $self->{users}->{$raw_username};
-    return 1;
-}
-
-sub joinChannel {
-    my ( $self, $channel, $key ) = @_;
-    my @channel = [ split( ',', $channel ) ];
-    foreach my $chan (@channel) {
-        $self->{bot}->join_channel( $chan, $key );
-    }
-}
-
-sub partChannel {
-    my ( $self, $channel, $message ) = @_;
-    return unless defined $self->{bot}->{server}->{channels}->{$channel};
-    $self->{bot}->part_channel( $channel, $message );
-    delete $self->{channels}->{$channel};
-}
-
-sub isActive {
-    my $self = shift;
-    return $self->{active};
-}
-
-sub _setActive {
-    my ( $self, $active ) = @_;
-    $self->{active} = ( $active > 0 );
-}
-
-sub _getServerId {
-    my $self = shift;
-    return $self->{id};
-}
-
-sub _getChannelId {
-    my ( $self, $channelName ) = @_;
-    foreach my $key ( keys %{ $self->{channels} } ) {
-        if ( $self->{channels}->{$key}->{name} eq $channelName ) {
-            return $key;
-        }
-    }
-    return undef;
 }
 
 1;
@@ -1038,7 +980,7 @@ sub login {
 
 sub loadPermissions {
     my $self = shift;
-    my $ps   = $wrapper->{dbd}->prepare(
+    my $ps   = $self->{wrapper}->{dbd}->prepare(
         'select
             channelid,level
         from
@@ -1083,5 +1025,38 @@ sub setPassword {
 
     #TODO: finish
 }
+
+1;
+
+package main;
+use Config::IniFiles;
+
+unless ( -e 'saphira.ini' ) {
+    print "[E] No configuration file found. Creating one with placeholder variables. Please\n"
+      . "\tmodify saphira.ini and restart the bot.\n";
+
+    my $cfg = Config::IniFiles->new();
+
+    $cfg->newval( 'mysql', 'host',     'localhost' );
+    $cfg->newval( 'mysql', 'username', 'root' );
+    $cfg->newval( 'mysql', 'password', '' );
+    $cfg->newval( 'mysql', 'database', 'saphira' );
+
+    $cfg->newval( 'irc', 'autoload', 'manage' );
+
+    $cfg->WriteConfig('saphira.ini');
+
+    exit;
+}
+
+my $cfg = Config::IniFiles->new( -file => 'saphira.ini' );
+
+my $wrapper = new Saphira::Wrapper(
+    $cfg->val( 'mysql', 'host' ),
+    $cfg->val( 'mysql', 'username' ),
+    $cfg->val( 'mysql', 'password' ),
+    $cfg->val( 'mysql', 'database' ),
+    [ split( ',', $cfg->val( 'irc', 'autoload' ) ) ]
+);
 
 1;
