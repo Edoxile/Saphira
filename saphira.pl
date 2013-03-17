@@ -252,7 +252,6 @@ sub handleQuery {
         $n++;
     }
     $ps->execute();
-    $dbd->disconnect();
     return $ps;
 }
 
