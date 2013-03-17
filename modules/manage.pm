@@ -32,6 +32,7 @@ sub getAuthLevel {
     my ($server, $message) = @_;
     my $user = $server->getUser($message->{raw_nick});
     return 0 unless defined $user;
+    print '[D] Getting level for ' . $user->getName() . '; Operator: ' . ($user->isOperator()?'yes':'no') . '; ' . $user->getPermission($message->{channel}) . "\n";
     return 9 if $user->isOperator();
     return $user->getPermission($message->{channel});
 }
@@ -46,7 +47,6 @@ sub handleSaidChanJoin {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ m/^!join\s(.+?)(?:\s(.+?))?$/);
-    return unless (getAuthLevel($server, $message) gt 6);
     
     my $channel = $1;
     my $key = $2 || '';
