@@ -400,10 +400,10 @@ sub new {
 sub init {
     my $self = shift;
     $self->{active} = 1;
-    print "[D] Fetching channels...\n";
+    #print "[D] Fetching channels...\n";
     my $ps = $self->handleQuery('select_channels');
     while ( my $result = $ps->fetchrow_hashref() ) {
-        print "\t[I] Adding channel: " . $result->{name} . "\n";
+        #print "\t[I] Adding channel: " . $result->{name} . "\n";
         $self->{channels}->{ $result->{id} } =
           new Saphira::API::Channel( $self, $result->{id}, $result->{name},
             $result->{password}, $result->{state}, 1, $result->{log} );
@@ -522,11 +522,11 @@ use DBI;
 sub new {
     my $class = shift;
     my $self  = bless {
-        mysql_host     => shift,
-        mysql_username => shift,
-        mysql_password => shift,
-        mysql_database => shift,
-
+        mysql_host       => shift,
+        mysql_username   => shift,
+        mysql_password   => shift,
+        mysql_database   => shift,
+        autoload_modules => shift,
         servers => {},
         bots    => {}
     }, $class;
@@ -588,11 +588,17 @@ sub init {
           new Saphira::Bot( $self->{servers}->{ $result->{id} }, $self );
         $self->{servers}->{$result->{id}}->_setBot($self->{bots}->{$result->{id}});
         $self->{bots}->{$result->{id}}->_loadChannels();
-        print "\t[I] Channels: " . join (',', $self->{bots}->{$result->{id}}->channels()) . "\n";
         print "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}]\n";
+        print "\t[I] Channels: " . join (',', $self->{bots}->{$result->{id}}->channels()) . "\n";
         $self->{bots}->{$result->{id}}->run();
     }
-
+    
+    foreach my $mod ($self->{autoload_modules}) {
+        print "[I] Loading module $mod...\n";
+        my $status = $self->loadModule($mod);
+        print "\t$status->{string} [Status: $status->{status}, Code: $status->{code}]\n";
+    }
+    
     return 1;
 }
 
