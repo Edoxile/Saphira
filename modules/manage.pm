@@ -34,7 +34,7 @@ sub getAuthLevel {
 sub handleSaidChanJoin {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ m/^!join\s(.+?)(\s(.+?))?$/);
+    return unless ($message->{body} =~ m/^!join\s(.+?)(\s(.+?))?$/);
     return unless getAuthLevel($server, $message) > 6 or $server->getUser($message->{raw_nick})->isChannelOperator();
     
     my $channel = $1;
@@ -46,7 +46,7 @@ sub handleSaidChanJoin {
 sub handleSaidChanPart {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ m/^!part\s(.+?)(\s(.+?))?$/);
+    return unless ($message->{body} =~ m/^!part\s(.+?)(?: (.+?))?$/
     return unless getAuthLevel($server, $message) > 6 or $server->getUser($message->{raw_nick})->isChannelOperator();
     
     my $channel = $1;
@@ -58,12 +58,11 @@ sub handleSaidChanPart {
 sub handleSaidLogin {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ m/^!login\s(\w+)\s(\w+)$/);
+    return unless $message->{body} =~ m/^!login\s(\w+)\s([a-zA-Z0-9_\-#@!$\^&\*]+)$/
     
-    $username = $1;
-    $password = sha512_hex($2);
+    print '[I] Logging in: <'.$message->{raw_nick}.'>, using username: ' . $1 . "\n";
     
-    if ( Saphira::API::User::login($wrapper, $server, $message->{who}, $1, $message->{raw_nick}, $password) ) {
+    if ( Saphira::API::User::login($wrapper, $server, $message->{who}, $1, $message->{raw_nick}, $2) ) {
         $server->{bot}->reply("\x02Logged in succesful!\x0F",$message);
     } else {
         $server->{bot}->reply("\x02Logging in failed!\x0F Perhaps you used the wrong password?", $message);
@@ -81,7 +80,7 @@ sub handleSaidLogout {
 sub handleSaidListModules {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!list(?: all)? modules$/));
+    return unless ($message->{body} =~ /^!list(?: all)? modules$/);
     
     my @availableModules = $wrapper->getAvailableModules();
     my @activeModules = $wrapper->getActiveModules();
@@ -103,7 +102,7 @@ sub handleSaidListModules {
 sub handleSaidListAvailable {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!list available(?: modules)?$/));
+    return unless ($message->{body} =~ /^!list available(?: modules)?$/);
     
     $bot->reply(('Available modules: ' . join(', ', sort($wrapper->getAvailableModules()))), $message);
 }
@@ -111,7 +110,7 @@ sub handleSaidListAvailable {
 sub handleSaidListLoaded {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!list loaded(?: modules)?$/));
+    return unless ($message->{body} =~ /^!list loaded(?: modules)?$/);
     
     $bot->reply(('Loaded modules: ' . join(', ', sort($wrapper->getLoadedModules()))), $message);
 }
@@ -119,7 +118,7 @@ sub handleSaidListLoaded {
 sub handleSaidListActive {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!list active(?: modules)?$/));
+    return unless ($message->{body} =~ /^!list active(?: modules)?$/);
     
     $bot->reply(('Active modules: ' . join(', ', sort($wrapper->getActiveModules()))), $message);
 }
@@ -127,7 +126,7 @@ sub handleSaidListActive {
 sub handleSaidLoadModule {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!load(?: module)? ([^ ]+)(?: (.+))?/));
+    return unless ($message->{body} =~ /^!load(?: module)? ([^ ]+)(?: (.+))?/);
     return unless getAuthLevel($server, $message) > 6;
     
     my $module = $1;
@@ -148,7 +147,7 @@ sub handleSaidLoadModule {
 sub handleSaidUnloadModule {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!unload(?: module)? (.+)/));
+    return unless ($message->{body} =~ /^!unload(?: module)? (.+)/);
     return unless getAuthLevel($server, $message) > 6;
     
     my @modules = split(',', $1);
@@ -166,7 +165,7 @@ sub handleSaidUnloadModule {
 sub handleSaidReloadModule {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!reload(?: module)? ([^ ]+)(?: (.+))?/));
+    return unless ($message->{body} =~ /^!reload(?: module)? ([^ ]+)(?: (.+))?/);
     return unless getAuthLevel($server, $message) > 6;
     
     my $module = $1;
@@ -189,7 +188,7 @@ sub handleSaidReloadModule {
 sub handleSaidEnableModule {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!enable(?: module)? (.+)/));
+    return unless ($message->{body} =~ /^!enable(?: module)? (.+)/);
     return unless getAuthLevel($server, $message) > 6;
     
     my $ret = $wrapper->enableModule($1);
@@ -200,7 +199,7 @@ sub handleSaidEnableModule {
 sub handleSaidDisableModule {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!disable(?: module)? (.+)/));
+    return unless ($message->{body} =~ /^!disable(?: module)? (.+)/);
     return unless getAuthLevel($server, $message) > 6;
     
     my $ret = $bot->disableModule($1);
@@ -211,7 +210,7 @@ sub handleSaidDisableModule {
 sub handleSaidModuleLoaded {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^Saphira, is module (.+) loaded\?$/));
+    return unless ($message->{body} =~ /^!(?:is )?(?:module )?(.+)(?: loaded)\?$/);
     
     $bot->reply(($wrapper->moduleLoaded($1) ? 'It\'s loaded alright!' : 'Nope! Module not loaded.'), $message);
 }
@@ -219,9 +218,9 @@ sub handleSaidModuleLoaded {
 sub handleSaidModuleActive {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^(?:is )?(?:module )?(.+)(?: active)\?$/));
+    return unless ($message->{body} =~ /^!(?:is )?(?:module )?(.+)(?: active)\?$/);
     
-    $wrapper->reply(($bot->moduleActive($1) ? 'It\'s active alright!' : 'Nope! Module not active.'), $message);
+    $wrapper->reply(($wrapper->moduleActive($1) ? 'It\'s active alright!' : 'Nope! Module not active.'), $message);
 }
 
 sub handleSaidInfo {
@@ -235,7 +234,7 @@ sub handleSaidInfo {
 sub handleSaidUpdate {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!update$/));
+    return unless ($message->{body} =~ /^!update$/);
     
     my @output = `git pull`;
     
@@ -244,7 +243,7 @@ sub handleSaidUpdate {
 
 sub handleSaidCmd {
     my ($wrapper, $server, $message) = @_;
-    return unless ($bot->addressed($message) && ($message->{body} =~ /^!cmd (.+)/));
+    return unless ($message->{body} =~ /^!cmd (.+)/);
     
     return unless getAuthLevel($server, $message) > 8;
     
