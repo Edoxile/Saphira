@@ -1139,7 +1139,7 @@ sub isOperator {
     return $self->{op};
 }
 
-sub setOp {
+sub setOperator {
     my ( $self, $op ) = @_;
     $self->{op} = int($op) > 0;
     $self->_update();

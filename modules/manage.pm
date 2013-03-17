@@ -32,8 +32,9 @@ sub getAuthLevel {
     my ($server, $message) = @_;
     my $user = $server->getUser($message->{raw_nick});
     return 0 unless defined $user;
-    print '[D] Getting level for ' . $user->getName() . '; Operator: ' . ($user->isOperator()?'yes':'no') . '; ' . $user->getPermission($message->{channel}) . "\n";
+    print '[D] Getting level for ' . $user->getNickname() . '; Operator: ' . ($user->isOperator()?'yes':'no') . '; ' . $user->getPermission($message->{channel}) . "\n";
     return 9 if $user->isOperator();
+    return 7 if $user->isChannelOperator();
     return $user->getPermission($message->{channel});
 }
 
