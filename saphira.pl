@@ -1087,7 +1087,7 @@ sub login {
         where
             username = ? AND password = ?'
     );
-    my $result = $ps->execute( $username, $password );
+    $ps->execute( $username, $password );
     if ( $ps->err ) {
         print "[E] Error accessing the MySQL database...\n\t$ps->errstr)";
         return 0;
@@ -1120,10 +1120,10 @@ sub loadPermissions {
                     server = ?
             ) and userid = ?'
     );
-    my $result = $ps->execute( $self->{id}, $self->{server}->{id} );
+    $ps->execute( $self->{id}, $self->{server}->{id} );
     return 0 unless not $ps->err;
-    while ( my $fields = $result->fetchrow_hashref() ) {
-        $self->{permissions}->{ $fields->{channelid} } = $fields->{level};
+    while ( my $result = $ps->fetchrow_hashref() ) {
+        $self->{permissions}->{ $result->{channelid} } = $result->{level};
     }
     return 1;
 }
