@@ -46,7 +46,7 @@ sub handleSaidChanJoin {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ m/^!join\s(.+?)(?:\s(.+?))?$/);
-    return unless (getAuthLevel($server, $message) > 6;
+    return unless (getAuthLevel($server, $message) gt 6);
     
     my $channel = $1;
     my $key = $2 || '';
@@ -58,7 +58,7 @@ sub handleSaidChanPart {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ m/^!part\s(.+?)(?: (.+?))?$/);
-    return unless (getAuthLevel($server, $message) > 6;
+    return unless (getAuthLevel($server, $message) gt 6);
     
     my $channel = $1;
     my $message = $2;
@@ -138,7 +138,7 @@ sub handleSaidLoadModule {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ /^!load(?: module)? ([^ ]+)(?: (.+))?/);
-    return unless getAuthLevel($server, $message) > 6;
+    return unless (getAuthLevel($server, $message) gt 6);
     
     my $module = $1;
     my $args   = $2;
@@ -159,7 +159,7 @@ sub handleSaidUnloadModule {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ /^!unload(?: module)? (.+)/);
-    return unless getAuthLevel($server, $message) > 6;
+    return unless (getAuthLevel($server, $message) gt 6);
     
     my @modules = split(',', $1);
     
@@ -177,7 +177,7 @@ sub handleSaidReloadModule {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ /^!reload(?: module)? ([^ ]+)(?: (.+))?/);
-    return unless getAuthLevel($server, $message) > 6;
+    return unless (getAuthLevel($server, $message) gt 6);
     
     my $module = $1;
     my $args   = $2;
@@ -200,7 +200,7 @@ sub handleSaidEnableModule {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ /^!enable(?: module)? (.+)/);
-    return unless getAuthLevel($server, $message) > 6;
+    return unless (getAuthLevel($server, $message) gt 6);
     
     my $ret = $wrapper->enableModule($1);
     
@@ -211,7 +211,7 @@ sub handleSaidDisableModule {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ /^!disable(?: module)? (.+)/);
-    return unless getAuthLevel($server, $message) > 6;
+    return unless (getAuthLevel($server, $message) gt 6);
     
     my $ret = $wrapper->disableModule($1);
     
@@ -256,7 +256,7 @@ sub handleSaidCmd {
     my ($wrapper, $server, $message) = @_;
     return unless ($message->{body} =~ /^!cmd (.+)/);
     
-    return unless getAuthLevel($server, $message) > 8;
+    return unless (getAuthLevel($server, $message) gt 8);
     
     my @output = `$1 2>&1`;
     
