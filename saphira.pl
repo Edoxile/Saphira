@@ -234,7 +234,8 @@ use DBI;
 
 sub new {
     my $class = shift;
-    my $self = bless { wrapper => shift }, $class;
+    my $self = bless { wrapper => shift, dbd => 0 }, $class;
+    $self->{dbd} = $self->{wrapper}->{dbd}->clone();
     return $self;
 }
 
@@ -243,7 +244,7 @@ sub handleQuery {
     my $package = ref $self;
     return unless defined $self->{__queries}->{$queryType}->{query};
     return unless defined $self->{__queries}->{$queryType}->{fields};
-    my $ps = $self->{wrapper}->{dbd}->prepare( $self->{__queries}->{$queryType}->{query} );
+    my $ps = $self->{dbd}->prepare( $self->{__queries}->{$queryType}->{query} );
     my $n  = 1;
     foreach my $field ( @{ $self->{__queries}->{$queryType}->{fields} } ) {
         $ps->bind_param( $n, $self->{$field} );
