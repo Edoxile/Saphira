@@ -59,7 +59,7 @@ sub handleSaidChanPart {
 sub handleSaidLogin {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($message->{body} =~ m/^!login\s(\w+)\s(\w+)$/);
+    return unless ($message->{body} =~ m/^!login ([^ ]+) (.*)/);
     
     print '[I] Logging in: <'.$message->{raw_nick}.'>, using username: ' . $1 . "\n";
     
