@@ -48,27 +48,23 @@ my $botinfo =
 sub new {
     my $class = shift;
     my $self  = bless {
-        server  => shift,
+        serv    => shift,
         wrapper => shift
     }, $class;
 
     $self->{IRCNAME}   = 'SaphiraBot' . int( rand(100000) );
     $self->{ALIASNAME} = 'Saphira' . int( rand(100000) );
+    
+    $self->server( $self->{serv}->{address} );
+    $self->port( int ( $self->{serv}->{port} ) );
+    $self->ssl( $self->{serv}->{secure} );
+    $self->nick( $self->{serv}->{username} );
 
-    $self->server( $self->{server}->{serveraddress} );
-    $self->port( $self->{server}->{port} );
-    $self->ssl( $self->{server}->{secure} );
-    $self->nick( $self->{server}->{username} );
-
-    $self->alt_nicks( ["PerlBot"] ), $self->username('Saphira');
+    $self->alt_nicks( ["PerlBot"] );
+    $self->username('Saphira');
     $self->name('Saphira, a Perl IRC-bot by Edoxile');
-    $self->charset('utf-8');
+    $self->charset('utf8');
 
-    my @channels = ();
-    foreach my $channel ( values %{$self->{server}->{channels}} ) {
-        push( @channels, $channel->getName() );
-    }
-    $self->channels(@channels);
 
     $self->init or die "init did not return a true value - dying";
 
@@ -76,44 +72,46 @@ sub new {
 }
 
 sub said   {
-    print '>> Said: [' . $_[1]->{channel} . '] <' . $_[1]->{who} . '>' . $_[1]->{body} . "\n";
-    $_[0]->processHooks( 'said',   $_[0]->{server}, $_[1] ); return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'said', $_[1] ); return;
 }
 
-sub emoted { $_[0]->processHooks( 'emoted', $_[0]->{server}, $_[1] ); return; }
+sub emoted {
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $_[1] ); return;
+}
 
 sub noticed {
-    print '>> Notice: [' . $_[1]->{channel} . '] <' . $_[1]->{who} . '>' . $_[1]->{body} . "\n";
-    $_[0]->processHooks( 'noticed', $_[0]->{server}, $_[1] );
-    return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'noticed', $_[1] ); return;
 }
 
 sub chanjoin {
-    $_[0]->processHooks( 'chanjoin', $_[0]->{server}, $_[1] );
-    return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'chanjoin', $_[1] ); return;
 }
 
 sub chanpart {
-    $_[0]->processHooks( 'chanpart', $_[0]->{server}, $_[1] );
-    return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'chanpart', $_[1] ); return;
 }
-sub topic  { $_[0]->processHooks( 'topic',  $_[0]->{server}, $_[1] ); return; }
-sub kicked { $_[0]->processHooks( 'kicked', $_[0]->{server}, $_[1] ); return; }
+
+sub topic  {
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'topic', $_[1] ); return;
+}
+
+sub kicked {
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'kicked', $_[1] ); return;
+}
 
 sub userquit {
-    $_[0]->processHooks( 'userquit', $_[0]->{server}, $_[1] );
-    return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'userquit', $_[1] ); return;
 }
 
 sub invited {
-    $_[0]->processHooks( 'invited', $_[0]->{server}, $_[1] );
-    return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'invited', $_[1] ); return;
 }
 
 sub nick_change {
-    $_[0]->processHooks( 'nick_change', $_[0]->{server}, ( $_[1], $_[2] ) );
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'nick_change', ( $_[1], $_[2] ) );
     return;
 }
+
 sub help { return $botinfo; }
 
 sub init {
@@ -124,11 +122,13 @@ sub init {
 sub connected {
     my $self = shift;
     print '[I] Connected! Identifying if password is present...' . "\n";
-    return unless $self->{server}->{nickservpass} ne '';
+    my $nspass = '' . $self->{serv}->{nickservpassword};
+    return unless $nspass ne '';
+    print '[I] Identifying using password ' . $nspass . "...\n";
     $self->say(
         who     => 'NickServ',
         channel => 'msg',
-        body    => 'IDENTIFY ' . $self->{server}->{nickservpass}
+        body    => 'IDENTIFY ' . $nspass
     );
 }
 
@@ -185,6 +185,15 @@ sub part_channel {
     $poe_kernel->post( $self->{IRCNAME}, 'part', $channel, $part_msg );
 }
 
+sub _loadChannels {
+    my $self = shift;
+    my @channels = ();
+    foreach my $channel (values %{$self->{serv}->{channels}}) {
+        push (@channels, $channel->getName());
+    }
+    $self->channels(@channels);
+}
+
 1;
 
 package Saphira::Module;
@@ -219,7 +228,7 @@ package Saphira::API::DBExt;
 
 use DBI;
 
-our $__queries = {};
+#our $__queries = {};
 
 sub new {
     my $class = shift;
@@ -232,15 +241,119 @@ sub handleQuery {
     my $package = ref $self;
     return unless defined $self->{__queries}->{$queryType}->{query};
     return unless defined $self->{__queries}->{$queryType}->{fields};
-    return unless $self->{__queries}->{$queryType}->{fields} gt 0;
     my $ps = $self->{wrapper}->{dbd}->prepare( $self->{__queries}->{$queryType}->{query} );
     my $n  = 1;
-    foreach my $field ( @{ $self->{$__queries}->{$queryType}->{fields} } ) {
+    foreach my $field ( @{ $self->{__queries}->{$queryType}->{fields} } ) {
         $ps->bind_param( $n, $self->{$field} );
         $n++;
     }
     $ps->execute();
     return $ps;
+}
+
+1;
+
+package Saphira::API::Channel;
+
+use base 'Saphira::API::DBExt';
+
+sub new {
+    my $class = shift;
+    my $self = bless {
+        server     => shift,
+        id         => shift,
+        name       => shift,
+        password   => shift,
+        state      => shift,
+        persistent => shift,
+        logging    => shift,
+        __queries  => {
+            insert => {
+                query => 'insert into channels (
+                server, name, log, password
+            ) values (
+                ?, ?, ?, ?
+            )',
+                fields => [ 'server', 'name', 'logging', 'password' ]
+            },
+            update => {
+                query => 'update channels set
+                      server = ?,
+                      log = ?,
+                      password = ?,
+                      state = ?
+                  where id = ?',
+                fields => [ 'server', 'logging', 'password', 'state', 'id' ]
+            }
+        }
+    }, $class;
+
+    #$self->init();
+
+    return $self;
+}
+
+sub getBot {
+    my $self = shift;
+    return $self->{server}->{bot};
+}
+
+sub getServer {
+    my $self = shift;
+    return $self->{server};
+}
+
+sub getId {
+    my $self = shift;
+    return $self->{id};
+}
+
+sub getName {
+    my $self = shift;
+    return $self->{name};
+}
+
+sub isPersistent {
+    my $self = shift;
+    return $self->{persistent};
+}
+
+sub setPersistency {
+    my ( $self, $persistency ) = @_;
+    $persistency = int($persistency);
+    $persistency = ( $persistency > 0 ) ? 1 : 0;
+    return unless $self->{persistent} ne $persistency;
+    if ( $persistency and $self->{state} eq 0 ) {
+        $self->_enable();
+    } elsif ( $persistency and $self->{state} eq -1 ) {
+        $self->_insert();
+    } else {
+        $self->_disable();
+    }
+}
+
+sub _insert {
+    my $self = shift;
+    my $ps   = $self->handleQuery('insert');
+    if ( !$ps->err ) {
+        $self->{state} = 1;
+        return 1;
+    }
+    return 0;
+}
+
+sub _disable {
+    my $self = shift;
+    $self->{state} = 0;
+    my $ps = $self->handleQuery('update');
+    return $ps->err;
+}
+
+sub _enable {
+    my $self = shift;
+    $self->{state} = 1;
+    my $ps = $self->handleQuery('update');
+    return $ps->err;
 }
 
 1;
@@ -252,26 +365,26 @@ use base 'Saphira::API::DBExt';
 sub new {
     my $class = shift;
     my $self = bless {
-        id           => shift,
-        servername   => shift,
-        address      => shift,
-        port         => shift,
-        secure       => shift,
-        username     => shift,
-        password     => shift,
-        nickpassword => shift,
-        wrapper      => shift,
-        bot          => 0,
-        active       => 0,
-        channels     => {},
-        users        => {},
-        __queries    => {
+        id               => shift,
+        servername       => shift,
+        address          => shift,
+        port             => shift,
+        secure           => shift,
+        username         => shift,
+        password         => shift,
+        nickservpassword => shift,
+        wrapper          => shift,
+        bot              => 0,
+        active           => 0,
+        channels         => {},
+        users            => {},
+        __queries        => {
             insert => {
                 query  => 'update servers set address = ?, port = ?, secure = ?, password = ?, nickservpassword = ? where id = ?',
                 fields => [ 'address', 'port', 'secure', 'password', 'nickservpassword', 'id' ]
             },
             select_channels => {
-                query  => 'select * from channels where state = 1 and server = ?',
+                query  => 'select * from channels where state = \'1\' and server = ?',
                 fields => ['id']
             }
         }
@@ -287,15 +400,14 @@ sub new {
 sub init {
     my $self = shift;
     $self->{active} = 1;
+    print "[D] Fetching channels...\n";
     my $ps = $self->handleQuery('select_channels');
     while ( my $result = $ps->fetchrow_hashref() ) {
+        print "\t[I] Adding channel: " . $result->{name} . "\n";
         $self->{channels}->{ $result->{id} } =
           new Saphira::API::Channel( $self, $result->{id}, $result->{name},
             $result->{password}, $result->{state}, 1, $result->{log} );
     }
-    #$self->{bot} = new Saphira::Bot( $self, $self->{wrapper} );
-    
-    #$self->{bot}->run();
 }
 
 sub getServerName {
@@ -365,7 +477,7 @@ sub joinChannel {
 
 sub partChannel {
     my ( $self, $channel, $message ) = @_;
-    return unless defined $self->{bot}->{server}->{channels}->{$channel};
+    return unless defined $self->{bot}->{serv}->{channels}->{$channel};
     $self->{bot}->part_channel( $channel, $message );
     delete $self->{channels}->{$channel};
 }
@@ -393,6 +505,12 @@ sub _getChannelId {
         }
     }
     return undef;
+}
+
+sub _setBot{
+    my ( $self, $bot ) = @_;
+    return unless $self->{bot} eq 0;
+    $self->{bot} = $bot;
 }
 
 1;
@@ -459,14 +577,19 @@ sub init {
     #print '[D] Number of rows in select-servers query: ' . $ps->rows . "\n";
     
     while ( my $result = $ps->fetchrow_hashref() ) {
-        print "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}]\n";
-        $self->{servers}->{ $result->{id} } = new Saphira::API::Server(
+        #print "[D] Creating Saphira::API::Server\n";
+        $self->{servers}->{$result->{id}} = new Saphira::API::Server(
             $result->{id},       $result->{servername},       $result->{address},
             $result->{port},     $result->{secure},           $result->{username},
             $result->{password}, $result->{nickservpassword}, $self
         );
-        $self->{bots}->{ $result->{id} } =
+        #print "[D] Creating Saphira::Bot\n";
+        $self->{bots}->{$result->{id}} =
           new Saphira::Bot( $self->{servers}->{ $result->{id} }, $self );
+        $self->{servers}->{$result->{id}}->_setBot($self->{bots}->{$result->{id}});
+        $self->{bots}->{$result->{id}}->_loadChannels();
+        print "\t[I] Channels: " . join (',', $self->{bots}->{$result->{id}}->channels()) . "\n";
+        print "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}]\n";
         $self->{bots}->{$result->{id}}->run();
     }
 
@@ -697,7 +820,7 @@ sub hookRegistered {
 }
 
 sub processHooks {
-    my ( $self, $type, $server, $data ) = @_;
+    my ( $self, $server, $type, $data ) = @_;
     while ( my ( $module, $moduleHash ) = each( %{ $self->{modules} } ) ) {
         next if ( $moduleHash->{enabled} == 0 );
         foreach ( @{ $moduleHash->{hooks}->{$type} } ) {
@@ -709,7 +832,6 @@ sub processHooks {
                     body    => "\x02Module '$module' encountered an error and will be unloaded:\x0F $@",
                     address => $data->{address}
                 );
-
                 $self->unloadModule($module);
             }
         }
@@ -738,112 +860,6 @@ sub moduleFunc {
     my ( $self, $module, $func, @args ) =
       @_[ $_[0], $_[1], $_[2], $_[3] .. $#_ ];
     return $self->module($module)->$func();
-}
-
-1;
-
-package Saphira::API::Channel;
-
-use base 'Saphira::API::DBExt';
-
-sub new {
-    my $class = shift;
-    my $self = bless {}, $class;
-    push $self, {
-        server     => shift,
-        id         => shift,
-        name       => shift,
-        password   => shift,
-        state      => shift,
-        persistent => shift,
-        logging    => shift,
-        __queries  => {
-            insert => {
-                query => 'insert into channels (
-                server, name, log, password
-            ) values (
-                ?, ?, ?, ?
-            )',
-                fields => ( 'server', 'name', 'logging', 'password' )
-            },
-            update => {
-                query => 'update channels set
-                      server = ?,
-                      log = ?,
-                      password = ?,
-                      state = ?
-                  where id = ?',
-                fields => ( 'server', 'logging', 'password', 'state', 'id' )
-            }
-        }
-    };
-
-    $self->init();
-
-    return $self;
-}
-
-sub getBot {
-    my $self = shift;
-    return $self->{server}->{bot};
-}
-
-sub getServer {
-    my $self = shift;
-    return $self->{server};
-}
-
-sub getId {
-    my $self = shift;
-    return $self->{id};
-}
-
-sub getName {
-    my $self = shift;
-    return $self->{name};
-}
-
-sub isPersistent {
-    my $self = shift;
-    return $self->{persistent};
-}
-
-sub setPersistency {
-    my ( $self, $persistency ) = @_;
-    $persistency = int($persistency);
-    $persistency = ( $persistency > 0 ) ? 1 : 0;
-    return unless $self->{persistent} ne $persistency;
-    if ( $persistency and $self->{state} eq 0 ) {
-        $self->_enable();
-    } elsif ( $persistency and $self->{state} eq -1 ) {
-        $self->_insert();
-    } else {
-        $self->_disable();
-    }
-}
-
-sub _insert {
-    my $self = shift;
-    my $ps   = $self->handleQuery('insert');
-    if ( !$ps->err ) {
-        $self->{state} = 1;
-        return 1;
-    }
-    return 0;
-}
-
-sub _disable {
-    my $self = shift;
-    $self->{state} = 0;
-    my $ps = $self->handleQuery('update');
-    return $ps->err;
-}
-
-sub _enable {
-    my $self = shift;
-    $self->{state} = 1;
-    my $ps = $self->handleQuery('update');
-    return $ps->err;
 }
 
 1;
