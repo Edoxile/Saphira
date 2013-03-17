@@ -21,6 +21,8 @@ sub init {
     $self->registerHook('said', \&handleSaidInfo);
     $self->registerHook('said', \&handleSaidUpdate);
     $self->registerHook('said', \&handleSaidCmd);
+    $self->registerHook('said', \&handleSaidLogin);
+    $self->registerHook('said', \&handleSaidLogout);
     $self->registerHook('said', \&handleSaidChanJoin);
     $self->registerHook('said', \&handleSaidChanPart);
 }
