@@ -25,6 +25,7 @@ sub init {
     $self->registerHook('said', \&handleSaidLogout);
     $self->registerHook('said', \&handleSaidChanJoin);
     $self->registerHook('said', \&handleSaidChanPart);
+    $self->registerHook('invited', \&handleInvited);
 }
 
 sub getAuthLevel {
@@ -34,11 +35,17 @@ sub getAuthLevel {
     return $server->getUser($message->{raw_nick})->getPermission($message->{channel});
 }
 
+sub handleInvited {
+    my ($wrapper, $server, $message) = @_;
+    
+    $server->joinChannel($message->{channel});
+}
+
 sub handleSaidChanJoin {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ m/^!join\s(.+?)(?:\s(.+?))?$/);
-    return unless getAuthLevel($server, $message) > 6 or $server->getUser($message->{raw_nick})->isChannelOperator();
+    return unless (getAuthLevel($server, $message) > 6 or $server->getUser($message->{raw_nick})->isChannelOperator());
     
     my $channel = $1;
     my $key = $2 || '';
@@ -50,7 +57,7 @@ sub handleSaidChanPart {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ m/^!part\s(.+?)(?: (.+?))?$/);
-    return unless getAuthLevel($server, $message) > 6 or $server->getUser($message->{raw_nick})->isChannelOperator();
+    return unless (getAuthLevel($server, $message) > 6 or $server->getUser($message->{raw_nick})->isChannelOperator());
     
     my $channel = $1;
     my $message = $2;
