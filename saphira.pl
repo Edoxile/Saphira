@@ -476,8 +476,9 @@ sub removeUser {
 
 sub joinChannel {
     my ( $self, $channel, $key ) = @_;
-    my @channel = [ split( ',', $channel ) ];
-    foreach my $chan (@channel) {
+    my @channels = [ split( ',', $channel ) ];
+    foreach my $chan (@channels) {
+        print "[D] Joining channel $chan\n";
         $self->{bot}->join_channel( $chan, $key );
     }
 }
