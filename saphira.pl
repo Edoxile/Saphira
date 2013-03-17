@@ -974,7 +974,7 @@ sub new {
 
     }, $class;
 
-    $self->init();
+    $self->loadPermissions();
 
     return $self;
 }
