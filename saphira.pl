@@ -235,7 +235,6 @@ use DBI;
 sub new {
     my $class = shift;
     my $self = bless { wrapper => shift }, $class;
-    #$self->{dbd} = $self->{wrapper}->{dbd}->clone();
     return $self;
 }
 
@@ -244,25 +243,7 @@ sub handleQuery {
     my $package = ref $self;
     return unless defined $self->{__queries}->{$queryType}->{query};
     return unless defined $self->{__queries}->{$queryType}->{fields};
-    
-    my $dbd = DBI->connect(
-        sprintf( 'DBI:mysql:%s;host=%s', $self->{wrapper}->{mysql_database}, $self->{wrapper}->{mysql_host} ),
-        $self->{wrapper}->{mysql_username},
-        $self->{wrapper}->{mysql_password},
-        { 'mysql_enable_utf8' => 1 }
-    );
-
-    if ( not $dbd ) {
-        print '[E] MySQL connect error: ' . $DBI::errstr . "\n";
-        return undef;
-    }
-    
-    #print "[D] Connected to MySQL database!\n";
-    
-    $dbd->do('SET NAMES utf8');
-    
-    #my $dbd = $self->{wrapper}->{dbd}->clone();
-    my $ps = $dbd->prepare( $self->{__queries}->{$queryType}->{query} );
+    my $ps = $self->{wrapper}->{dbd}->clone()->prepare( $self->{__queries}->{$queryType}->{query} );
     my $n  = 1;
     foreach my $field ( @{ $self->{__queries}->{$queryType}->{fields} } ) {
         $ps->bind_param( $n, $self->{$field} );
@@ -1081,7 +1062,7 @@ sub getLastLogin {
 sub login {
     my ( $wrapper, $server, $nickname, $username, $raw_nick, $password ) = @_;
     $password = sha512_hex($password);
-    my $ps = $wrapper->{dbd}->prepare(
+    my $ps = $wrapper->{dbd}->clone()->prepare(
         'select
             lastlogin, id
         from
@@ -1107,7 +1088,7 @@ sub login {
 
 sub loadPermissions {
     my $self = shift;
-    my $ps   = $self->{wrapper}->{dbd}->prepare(
+    my $ps   = $self->{wrapper}->{dbd}->clone()->prepare(
         'select
             channelid,level
         from
