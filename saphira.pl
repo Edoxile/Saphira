@@ -476,11 +476,11 @@ sub removeUser {
 
 sub joinChannel {
     my ( $self, $channel, $key ) = @_;
-    my @channels = [ split( ',', $channel ) ];
-    foreach my $chan (@channels) {
-        print "[D] Joining channel $chan\n";
-        $self->{bot}->join_channel( $chan, $key );
-    }
+    #my @channels = [ split( ',', $channel ) ];
+    #foreach my $chan (@channels) {
+    #    print "[D] Joining channel $chan\n";
+        $self->{bot}->join_channel( $channel, $key );
+    #}
 }
 
 sub partChannel {
