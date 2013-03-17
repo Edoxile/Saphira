@@ -245,7 +245,7 @@ sub handleQuery {
     return unless defined $self->{__queries}->{$queryType}->{query};
     return unless defined $self->{__queries}->{$queryType}->{fields};
     
-    $dbd = DBI->connect(
+    my $dbd = DBI->connect(
         sprintf( 'DBI:mysql:%s;host=%s', $self->{wrapper}->{mysql_database}, $self->{wrapper}->{mysql_host} ),
         $self->{wrapper}->{mysql_username},
         $self->{wrapper}->{mysql_password},
