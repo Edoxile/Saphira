@@ -32,7 +32,8 @@ sub getAuthLevel {
     my ($server, $message) = @_;
     my $user = $server->getUser($message->{raw_nick});
     return 0 unless defined $user;
-    return $server->getUser($message->{raw_nick})->getPermission($message->{channel});
+    return 9 if $user->isOperator();
+    return $user->getPermission($message->{channel});
 }
 
 sub handleInvited {
@@ -45,7 +46,7 @@ sub handleSaidChanJoin {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ m/^!join\s(.+?)(?:\s(.+?))?$/);
-    return unless (getAuthLevel($server, $message) > 6 or $server->getUser($message->{raw_nick})->isChannelOperator());
+    return unless (getAuthLevel($server, $message) > 6;
     
     my $channel = $1;
     my $key = $2 || '';
@@ -57,7 +58,7 @@ sub handleSaidChanPart {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ m/^!part\s(.+?)(?: (.+?))?$/);
-    return unless (getAuthLevel($server, $message) > 6 or $server->getUser($message->{raw_nick})->isChannelOperator());
+    return unless (getAuthLevel($server, $message) > 6;
     
     my $channel = $1;
     my $message = $2;

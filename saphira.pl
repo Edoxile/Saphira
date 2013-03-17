@@ -1134,7 +1134,7 @@ sub logout {
     return $self->{server}->removeUser($self);
 }
 
-sub isOp {
+sub isOperator {
     my $self = shift;
     return $self->{op};
 }
