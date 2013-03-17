@@ -38,6 +38,7 @@ my $wrapper = new Saphira::Wrapper(
 package Saphira::Bot;
 use base 'Bot::BasicBot';
 use POE;
+#*AUTOLOAD = \&Bot::BasicBot::AUTOLOAD;
 
 my $version = '2.0.0';
 my $botinfo =
@@ -49,7 +50,8 @@ sub new {
     my $class = shift;
     my $self  = bless {
         serv    => shift,
-        wrapper => shift
+        wrapper => shift,
+        thread  => 0
     }, $class;
 
     $self->{IRCNAME}   = 'SaphiraBot' . int( rand(100000) );
@@ -201,10 +203,10 @@ use warnings;
 use strict;
 
 sub new {
-    my ( $class, $bot, $wrapper, $message, $args ) = @_;
-
-    my $self = bless { bot => $bot, wrapper => $wrapper }, $class;
-
+    my ( $class, $wrapper, $message, $args ) = @_;
+    
+    my $self = bless { wrapper => $wrapper }, $class;
+    
     $self->init( $message, $args );
 
     return $self;
@@ -217,7 +219,7 @@ sub registerHook {
     $module =~ s/Saphira::Module::(.*)/$1/;
     $module = lc($module);
 
-    $self->{bot}->registerHook( $module, $type, $code );
+    $self->{wrapper}->registerHook( $module, $type, $code );
 }
 
 sub init { undef }
@@ -518,6 +520,12 @@ sub _setBot{
 package Saphira::Wrapper;
 
 use DBI;
+use threads(
+    'yield',
+    'stack_size' => 64*4096,
+    'exit' => 'threads_only',
+    'stringify'
+  );
 
 sub new {
     my $class = shift;
@@ -576,6 +584,13 @@ sub init {
     
     #print '[D] Number of rows in select-servers query: ' . $ps->rows . "\n";
     
+    foreach my $mod (@{$self->{autoload_modules}}) {
+        print "[I] Loading module $mod...\n";
+        my $status = $self->loadModule($mod);
+        print "\t$status->{string} [Status: $status->{status}, Code: $status->{code}]\n";
+        die('Couldn\'t load module ' . $mod . '...') if $status->{status} eq 0;
+    }
+    
     while ( my $result = $ps->fetchrow_hashref() ) {
         #print "[D] Creating Saphira::API::Server\n";
         $self->{servers}->{$result->{id}} = new Saphira::API::Server(
@@ -590,16 +605,16 @@ sub init {
         $self->{bots}->{$result->{id}}->_loadChannels();
         print "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}]\n";
         print "\t[I] Channels: " . join (',', $self->{bots}->{$result->{id}}->channels()) . "\n";
-        $self->{bots}->{$result->{id}}->run();
-    }
-    
-    foreach my $mod ($self->{autoload_modules}) {
-        print "[I] Loading module $mod...\n";
-        my $status = $self->loadModule($mod);
-        print "\t$status->{string} [Status: $status->{status}, Code: $status->{code}]\n";
+        #TODO: Start bot in thread;
+        #$self->{bots}->{$result->{id}}->start();
+        threads->create('runThread',$self->{bots}->{$result->{id}})->join();
     }
     
     return 1;
+}
+
+sub runThread {
+    $_[0]->run();
 }
 
 sub getServer {
@@ -676,7 +691,7 @@ sub loadModule {
         require( './modules/' . $moduleKey . '.pm' );
 
         $self->{modules}->{$moduleKey}->{object} =
-          $modulePackage->new( $self, $self->{wrapper}, $message, $args );
+          $modulePackage->new( $self, $message, $args );
         $self->{modules}->{$moduleKey}->{enabled} = 1;
 
         push( @{ $self->{moduleList} }, $moduleKey );

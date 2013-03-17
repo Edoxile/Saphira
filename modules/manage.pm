@@ -4,7 +4,7 @@ package Saphira::Module::Manage;
 use base 'Saphira::Module';
 use Digest::SHA 'sha512_hex';
 
-sub init{
+sub init {
     my ($self, $message, $args) = @_;
     
     $self->registerHook('said', \&handleSaidListModules);
@@ -28,13 +28,13 @@ sub init{
 
 sub getAuthLevel {
     my ($server, $message) = @_;
-    return $server->getUser($message->{raw_nick})->getPermission($message->{channel})
+    return $server->getUser($message->{raw_nick})->getPermission($message->{channel});
 }
 
 sub handleSaidChanJoin {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($message->{body} =~ m/^!join\s(.+?)(\s(.+?))?$/);
+    return unless ($message->{body} =~ m/^!join\s(.+?)(?:\s(.+?))?$/);
     return unless getAuthLevel($server, $message) > 6 or $server->getUser($message->{raw_nick})->isChannelOperator();
     
     my $channel = $1;
@@ -46,7 +46,7 @@ sub handleSaidChanJoin {
 sub handleSaidChanPart {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($message->{body} =~ m/^!part\s(.+?)(?: (.+?))?$/
+    return unless ($message->{body} =~ m/^!part\s(.+?)(?: (.+?))?$/);
     return unless getAuthLevel($server, $message) > 6 or $server->getUser($message->{raw_nick})->isChannelOperator();
     
     my $channel = $1;
@@ -58,7 +58,7 @@ sub handleSaidChanPart {
 sub handleSaidLogin {
     my ($wrapper, $server, $message) = @_;
     
-    return unless $message->{body} =~ m/^!login\s(\w+)\s([a-zA-Z0-9_\-#@!$\^&\*]+)$/
+    return unless ($message->{body} =~ m/^!login\s(\w+)\s([a-zA-Z0-9_\-#@!$\^&\*]+)$/);
     
     print '[I] Logging in: <'.$message->{raw_nick}.'>, using username: ' . $1 . "\n";
     
@@ -72,7 +72,7 @@ sub handleSaidLogin {
 sub handleSaidLogout {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($bot->addressed($message) && ($message->{body} =~ m/^!logout/);
+    return unless ($message->{body} =~ m/^!logout/);
     
     $server->getUser($message->{raw_nick})->logout();
 }
@@ -256,3 +256,5 @@ sub handleSaidCmd {
     
     $bot->reply(($prefix . join('', @output)), $message);
 }
+
+1;
