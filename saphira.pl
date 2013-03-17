@@ -243,7 +243,7 @@ sub handleQuery {
     my $package = ref $self;
     return unless defined $self->{__queries}->{$queryType}->{query};
     return unless defined $self->{__queries}->{$queryType}->{fields};
-    my $ps = $self->{wrapper}->{dbd}->clone()->prepare( $self->{__queries}->{$queryType}->{query} );
+    my $ps = $self->{wrapper}->cloneDBD()->prepare( $self->{__queries}->{$queryType}->{query} );
     my $n  = 1;
     foreach my $field ( @{ $self->{__queries}->{$queryType}->{fields} } ) {
         $ps->bind_param( $n, $self->{$field} );
@@ -571,6 +571,24 @@ sub new {
         #print "[D] \$self->init() failed...\n";
         return undef;
     }
+}
+
+sub cloneDBD {
+    my $self = shift;
+    
+    my $dbd = DBI->connect(
+        sprintf( 'DBI:mysql:%s;host=%s', $self->{mysql_database}, $self->{mysql_host} ),
+        $self->{mysql_username},
+        $self->{mysql_password},
+        { 'mysql_enable_utf8' => 1 }
+    );
+
+    if ( not $dbd ) {
+        print '[E] MySQL connect error: ' . $DBI::errstr . "\n";
+        return undef;
+    }
+    
+    return $dbd;
 }
 
 sub init {
@@ -1062,7 +1080,7 @@ sub getLastLogin {
 sub login {
     my ( $wrapper, $server, $nickname, $username, $raw_nick, $password ) = @_;
     $password = sha512_hex($password);
-    my $ps = $wrapper->{dbd}->clone()->prepare(
+    my $ps = $wrapper->cloneDBD()->prepare(
         'select
             lastlogin, id
         from
@@ -1088,7 +1106,7 @@ sub login {
 
 sub loadPermissions {
     my $self = shift;
-    my $ps   = $self->{wrapper}->{dbd}->clone()->prepare(
+    my $ps   = $self->{wrapper}->cloneDBD()->prepare(
         'select
             channelid,level
         from
