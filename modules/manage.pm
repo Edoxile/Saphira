@@ -95,7 +95,7 @@ sub handleSaidListModules {
     $reply   .= (" \x02Disabled:\x0F " . join(', ', sort(@loadedButDisabledModules)) . '.') if (scalar(@loadedButDisabledModules) > 0);
     $reply   .= (" \x02Available:\x0F " . join(', ', sort(@availableButNotLoadedModules)) . '.') if (scalar(@availableButNotLoadedModules) > 0);
     
-    $bot->reply($reply, $message);
+    $server->{bot}->reply($reply, $message);
 }
 
 sub handleSaidListAvailable {
@@ -103,7 +103,7 @@ sub handleSaidListAvailable {
     
     return unless ($message->{body} =~ /^!list available(?: modules)?$/);
     
-    $bot->reply(('Available modules: ' . join(', ', sort($wrapper->getAvailableModules()))), $message);
+    $server->{bot}->reply(('Available modules: ' . join(', ', sort($wrapper->getAvailableModules()))), $message);
 }
 
 sub handleSaidListLoaded {
@@ -111,7 +111,7 @@ sub handleSaidListLoaded {
     
     return unless ($message->{body} =~ /^!list loaded(?: modules)?$/);
     
-    $bot->reply(('Loaded modules: ' . join(', ', sort($wrapper->getLoadedModules()))), $message);
+    $server->{bot}->reply(('Loaded modules: ' . join(', ', sort($wrapper->getLoadedModules()))), $message);
 }
 
 sub handleSaidListActive {
@@ -119,7 +119,7 @@ sub handleSaidListActive {
     
     return unless ($message->{body} =~ /^!list active(?: modules)?$/);
     
-    $bot->reply(('Active modules: ' . join(', ', sort($wrapper->getActiveModules()))), $message);
+    $server->{bot}->reply(('Active modules: ' . join(', ', sort($wrapper->getActiveModules()))), $message);
 }
 
 sub handleSaidLoadModule {
@@ -134,12 +134,12 @@ sub handleSaidLoadModule {
     if ($module =~ /,/) {
         my @modules = split(',', $module);
         foreach (@modules) {
-            my $ret = $bot->loadModule($_, $message);
-            $bot->reply("$ret->{string} [Status: $ret->{status}, Code: $reply->{code}]", $message);
+            my $ret = $wrapper->loadModule($_, $message);
+            $server->{bot}->reply("$ret->{string} [Status: $ret->{status}, Code: $reply->{code}]", $message);
         }
     } else {
-        my $reply = $bot->loadModule($module, $message, $args);
-        $bot->reply("$reply->{string} [Status: $reply->{status}, Code: $reply->{code}]", $message);
+        my $reply = $wrapper->loadModule($module, $message, $args);
+        $server->{bot}->reply("$reply->{string} [Status: $reply->{status}, Code: $reply->{code}]", $message);
     }
 }
 
@@ -153,11 +153,11 @@ sub handleSaidUnloadModule {
     
     MODULE: foreach (@modules) {
         if (lc($_) eq 'manage') {
-            $bot->reply("I can't unload the Manage module... How else would you control me?", $message);
+            $server->{bot}->reply("I can't unload the Manage module... How else would you control me?", $message);
             next MODULE;
         }
-        my $reply = $bot->unloadModule($_);
-        $bot->reply("$reply->{string} [Status: $reply->{status}, Code: $reply->{code}]", $message);
+        my $reply = $wrapper->unloadModule($_);
+        $server->{bot}->reply("$reply->{string} [Status: $reply->{status}, Code: $reply->{code}]", $message);
     }
 }
 
@@ -175,12 +175,12 @@ sub handleSaidReloadModule {
             
         foreach (@modules) {
             my $ret = $wrapper->reloadModule($_, $message);
-            $bot->reply("$ret->{string} [Status: $ret->{status}, Code: $ret->{code}]", $message);
+            $server->{bot}->reply("$ret->{string} [Status: $ret->{status}, Code: $ret->{code}]", $message);
         }
     
     } else {
         my $ret = $wrapper->reloadModule($module, $message, $args);
-        $bot->reply("$ret->{string} [Status: $ret->{status}, Code: $ret->{code}]", $message);
+        $server->{bot}->reply("$ret->{string} [Status: $ret->{status}, Code: $ret->{code}]", $message);
     }
 }
 
@@ -192,7 +192,7 @@ sub handleSaidEnableModule {
     
     my $ret = $wrapper->enableModule($1);
     
-    $bot->reply("$ret->{string} [Status: $ret->{status}, Code: $ret->{code}]", $message);
+    $server->{bot}->reply("$ret->{string} [Status: $ret->{status}, Code: $ret->{code}]", $message);
 }
 
 sub handleSaidDisableModule {
@@ -201,9 +201,9 @@ sub handleSaidDisableModule {
     return unless ($message->{body} =~ /^!disable(?: module)? (.+)/);
     return unless getAuthLevel($server, $message) > 6;
     
-    my $ret = $bot->disableModule($1);
+    my $ret = $wrapper->disableModule($1);
     
-    $bot->reply("$ret->{string} [Status: $ret->{status}, Code: $ret->{code}]", $message);
+    $server->{bot}->reply("$ret->{string} [Status: $ret->{status}, Code: $ret->{code}]", $message);
 }
 
 sub handleSaidModuleLoaded {
@@ -211,7 +211,7 @@ sub handleSaidModuleLoaded {
     
     return unless ($message->{body} =~ /^!(?:is )?(?:module )?(.+)(?: loaded)\?$/);
     
-    $bot->reply(($wrapper->moduleLoaded($1) ? 'It\'s loaded alright!' : 'Nope! Module not loaded.'), $message);
+    $server->{bot}->reply(($wrapper->moduleLoaded($1) ? 'It\'s loaded alright!' : 'Nope! Module not loaded.'), $message);
 }
 
 sub handleSaidModuleActive {
@@ -219,7 +219,7 @@ sub handleSaidModuleActive {
     
     return unless ($message->{body} =~ /^!(?:is )?(?:module )?(.+)(?: active)\?$/);
     
-    $wrapper->reply(($wrapper->moduleActive($1) ? 'It\'s active alright!' : 'Nope! Module not active.'), $message);
+    $server->{bot}->reply(($wrapper->moduleActive($1) ? 'It\'s active alright!' : 'Nope! Module not active.'), $message);
 }
 
 sub handleSaidInfo {
@@ -227,7 +227,7 @@ sub handleSaidInfo {
     
     return unless ($message->{body} =~ /^(?:!Saprhia|Saphira\?)$/i);
     
-    $bot->reply($bot->help(), $message);
+    $server->{bot}->reply($server->{bot}->help(), $message);
 }
 
 sub handleSaidUpdate {
@@ -237,7 +237,7 @@ sub handleSaidUpdate {
     
     my @output = `git pull`;
     
-    $bot->reply(join('', @output), $message);
+    $server->{bot}->reply(join('', @output), $message);
 }
 
 sub handleSaidCmd {
@@ -253,7 +253,7 @@ sub handleSaidCmd {
         $prefix .= "\x02Error:\x0F ";
     }
     
-    $bot->reply(($prefix . join('', @output)), $message);
+    $server->{bot}->reply(($prefix . join('', @output)), $message);
 }
 
 1;
