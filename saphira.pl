@@ -450,6 +450,11 @@ sub setPassword {
     $self->_update();
 }
 
+sub getUser {
+    my ($self, $raw_nick) = @_;
+    return $self->{users}->{$raw_nick};
+}
+
 sub getUsers {
     my $self = shift;
     return @{ values $self->{users} };

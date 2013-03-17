@@ -27,6 +27,8 @@ sub init {
 
 sub getAuthLevel {
     my ($server, $message) = @_;
+    my $user = $server->getUser($message->{raw_nick});
+    return 0 unless defined $user;
     return $server->getUser($message->{raw_nick})->getPermission($message->{channel});
 }
 
