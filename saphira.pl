@@ -915,8 +915,7 @@ use Digest::SHA 'sha512_hex';
 
 sub new {
     my $class = shift;
-    my $self = bless {}, $class;
-    push $self, {
+    my $self = bless {
         wrapper      => shift,
         server       => shift,
         id           => shift,
@@ -933,7 +932,7 @@ sub new {
             ) values (
                 ?, ?, ?, ?
             )',
-                fields => ( 'server', 'name', 'logging', 'password' )
+                fields => [ 'server', 'name', 'logging', 'password' ]
             },
             update_op => {
                 query => 'update
@@ -942,7 +941,7 @@ sub new {
                 op = ?
             where
                 id = ?',
-                fields => ( 'op', 'id' )
+                fields => [ 'op', 'id' ]
             },
             update_password => {
                 query => 'update
@@ -951,7 +950,7 @@ sub new {
                 password = ?
             where
                 id = ?',
-                fields => ( 'password', 'op', 'id' )
+                fields => [ 'password', 'op', 'id' ]
             },
             update_lastlogin => {
                 query => 'update
@@ -960,7 +959,7 @@ sub new {
                 lastlogin = now()
             where
                 id = ?',
-                fields => ('id')
+                fields => ['id']
             },
             select_permissions => {
                 query => 'select
@@ -969,11 +968,11 @@ sub new {
                 permissios
             where
                 userid = ?',
-                fields => ('id')
+                fields => ['id']
             }
           }
 
-    };
+    }, $class;
 
     $self->init();
 
