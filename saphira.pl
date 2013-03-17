@@ -893,6 +893,7 @@ sub moduleFunc {
 package Saphira::API::User;
 
 use base 'Saphira::API::DBExt';
+use Digest::SHA 'sha512_hex';
 
 sub new {
     my $class = shift;
