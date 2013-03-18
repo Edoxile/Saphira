@@ -593,7 +593,7 @@ sub init {
         return 0;
     }
     
-    print "[I] Loading Modules..."
+    print "[I] Loading Modules...\n";
     foreach my $mod (@{$self->{autoload_modules}}) {
         print ">> Loading module $mod\n";
         my $status = $self->loadModule($mod);
