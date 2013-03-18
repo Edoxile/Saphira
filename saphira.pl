@@ -199,8 +199,8 @@ package Saphira::Module;
 use warnings;
 use strict;
 require Exporter;
-@ISA = qw(Exporter);
-@EXPORT = qw( getAuthLevel );
+our @ISA = qw(Exporter);
+our @EXPORT = qw( getAuthLevel );
 
 sub new {
     my ( $class, $wrapper, $message, $args ) = @_;
