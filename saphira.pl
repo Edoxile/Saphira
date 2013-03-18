@@ -198,7 +198,9 @@ sub _loadChannels {
 package Saphira::Module;
 use warnings;
 use strict;
-@EXPORT qw( getAuthLevel );
+require Exporter;
+@ISA = qw(Exporter);
+@EXPORT = qw( getAuthLevel );
 
 sub new {
     my ( $class, $wrapper, $message, $args ) = @_;
