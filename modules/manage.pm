@@ -255,7 +255,7 @@ sub handleSaidUpdate {
 
 sub handleSaidCmd {
     my ($wrapper, $server, $message) = @_;
-    return unless ($message->{body} =~ /^!cmd (.+)/);
+    return unless ($message->{body} =~ /^!cmd (.+)$/);
     
     return unless (getAuthLevel($server, $message) gt 8);
     

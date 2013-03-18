@@ -1035,9 +1035,9 @@ sub isChannelOperator {
     my ( $self, $chan ) = @_;
     my $state = $self->{server}->{bot}->pocoirc();
     return
-         $state->is_channel_operator( $chan, $self->{nick} )
-      || $state->is_channel_owner( $chan, $self->{nick} )
-      || $state->is_channel_halfop( $chan, $self->{nick} );
+         $state->is_channel_operator( $chan, $self->{nickname} )
+      || $state->is_channel_owner( $chan, $self->{nickname} )
+      || $state->is_channel_halfop( $chan, $self->{nickname} );
 }
 
 sub _reloadPermissions {
@@ -1082,7 +1082,7 @@ sub login {
     $password = sha512_hex($password);
     my $ps = $wrapper->cloneDBD()->prepare(
         'select
-            lastlogin, id
+            op, lastlogin, id
         from
             users
         where
@@ -1097,7 +1097,7 @@ sub login {
         return 0 unless defined $result;
         my $user =
           new Saphira::API::User( $wrapper, $server, $result->{id}, $nickname,
-            $username, $raw_nick, $result->{lastlogin} );
+            $username, $raw_nick, $result->{lastlogin}, $result->{op} );
         $user->loadPermissions();
         $server->addUser($user);
         return 1;
