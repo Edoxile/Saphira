@@ -219,15 +219,6 @@ sub registerHook {
     $self->{wrapper}->registerHook( $module, $type, $code );
 }
 
-sub getAuthLevel {
-    my ($self, $server, $message) = @_;
-    my $user = $server->getUser($message->{raw_nick});
-    return 0 unless defined $user;
-    return 9 if $user->isOperator();
-    return 6 if $user->isChannelOperator();
-    return $user->getPermission($message->{channel});
-}
-
 sub init { undef }
 
 1;
