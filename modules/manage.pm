@@ -28,18 +28,10 @@ sub init {
     $self->registerHook('invited', \&handleInvited);
 }
 
-sub getAuthLevel {
-    my ($server, $message) = @_;
-    my $user = $server->getUser($message->{raw_nick});
-    return 0 unless defined $user;
-    #print '[D] Getting level for ' . $user->getNickname() . '; Operator: ' . ($user->isOperator()?'yes':'no') . '; ' . $user->getPermission($message->{channel}) . "\n";
-    return 9 if $user->isOperator();
-    return 7 if $user->isChannelOperator();
-    return $user->getPermission($message->{channel});
-}
-
 sub handleInvited {
     my ($wrapper, $server, $message) = @_;
+    
+    print '>> Joining channel: ' . $message->{channel} . ', invited by: ' . $message->{who} . "\n";
     
     $server->joinChannel($message->{channel});
 }
@@ -47,7 +39,9 @@ sub handleInvited {
 sub handleSaidChanJoin {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($message->{body} =~ m/^!join\s(.+?)(?:\s(.+?))?$/);
+    return unless ($message->{body} =~ m/^!join\s(#\w+)(?:\s(.+?))?$/);
+    
+    print '>> Joining channel: ' . $1 . ', invited by: ' . $message->{who} . "\n";
     
     my $channel = $1;
     my $key = $2 || '';
@@ -58,8 +52,10 @@ sub handleSaidChanJoin {
 sub handleSaidChanPart {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($message->{body} =~ m/^!part\s(.+?)(?: (.+?))?$/);
-    return unless (getAuthLevel($server, $message) gt 6);
+    return unless ($message->{body} =~ m/^!part\s(#\w+)(?:\s(.+?))?$/);
+    return unless (getAuthLevel($server, $message) gt 5);
+    
+    print '>> Parting channel: ' . $1 . ', called by: ' . $message->{who} . "\n";
     
     my $channel = $1;
     my $message = $2;
@@ -72,7 +68,7 @@ sub handleSaidLogin {
     
     return unless ($message->{body} =~ m/^!login ([^ ]+) (.*)/);
     
-    print '[I] Logging in: <'.$message->{raw_nick}.'>, using username: ' . $1 . "\n";
+    print '>> Logging in: <'.$message->{raw_nick}.'>, using username: ' . $1 . "\n";
     
     if ( Saphira::API::User::login($wrapper, $server, $message->{who}, $1, $message->{raw_nick}, $2) ) {
         $server->{bot}->reply("\x02Logged in succesful!\x0F",$message);
@@ -249,6 +245,12 @@ sub handleSaidUpdate {
     return unless ($message->{body} =~ /^!update$/);
     
     my @output = `git pull`;
+    
+    if ( $? ne 0 ) {
+        $server->{bot}->reply("\x02Error:\x0F " . join('',@output), $message);
+    } else {
+        $server->{bot}->reply('Successfully pulled update from github!');
+    }
     
     $server->{bot}->reply(join('', @output), $message);
 }

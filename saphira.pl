@@ -21,10 +21,9 @@ unless ( -e 'saphira.ini' ) {
 
     exit;
 }
-#print "[D] Reading Config...\n";
+
 my $cfg = Config::IniFiles->new( -file => 'saphira.ini' );
 
-#print "[D] Starting Wrapper...\n";
 my $wrapper = new Saphira::Wrapper(
     $cfg->val( 'mysql', 'host' ),
     $cfg->val( 'mysql', 'username' ),
@@ -38,7 +37,6 @@ my $wrapper = new Saphira::Wrapper(
 package Saphira::Bot;
 use base 'Bot::BasicBot';
 use POE;
-#*AUTOLOAD = \&Bot::BasicBot::AUTOLOAD;
 
 my $version = '2.0.0';
 my $botinfo =
@@ -126,7 +124,6 @@ sub connected {
     print '[I] Connected! Identifying if password is present...' . "\n";
     my $nspass = '' . $self->{serv}->{nickservpassword};
     return unless $nspass ne '';
-    print '[I] Identifying using password ' . $nspass . "...\n";
     $self->say(
         who     => 'NickServ',
         channel => 'msg',
@@ -222,6 +219,15 @@ sub registerHook {
     $self->{wrapper}->registerHook( $module, $type, $code );
 }
 
+sub getAuthLevel {
+    my ($server, $message) = @_;
+    my $user = $server->getUser($message->{raw_nick});
+    return 0 unless defined $user;
+    return 9 if $user->isOperator();
+    return 6 if $user->isChannelOperator();
+    return $user->getPermission($message->{channel});
+}
+
 sub init { undef }
 
 1;
@@ -229,8 +235,6 @@ sub init { undef }
 package Saphira::API::DBExt;
 
 use DBI;
-
-#our $__queries = {};
 
 sub new {
     my $class = shift;
@@ -289,8 +293,6 @@ sub new {
             }
         }
     }, $class;
-
-    #$self->init();
 
     return $self;
 }
@@ -392,8 +394,6 @@ sub new {
         }
       }, $class;
     
-    #print '[D] Running Saphira::API::Servers $self->init() for {'.$self->{id}.'}' . $self->{servername} . "\n";
-    
     $self->init();
 
     return $self;
@@ -402,10 +402,8 @@ sub new {
 sub init {
     my $self = shift;
     $self->{active} = 1;
-    #print "[D] Fetching channels...\n";
     my $ps = $self->handleQuery('select_channels');
     while ( my $result = $ps->fetchrow_hashref() ) {
-        #print "\t[I] Adding channel: " . $result->{name} . "\n";
         $self->{channels}->{ $result->{id} } =
           new Saphira::API::Channel( $self, $result->{id}, $result->{name},
             $result->{password}, $result->{state}, 1, $result->{log} );
@@ -476,16 +474,13 @@ sub removeUser {
 
 sub joinChannel {
     my ( $self, $channel, $key ) = @_;
-    #my @channels = [ split( ',', $channel ) ];
-    #foreach my $chan (@channels) {
-    #    print "[D] Joining channel $chan\n";
-        $self->{bot}->join_channel( $channel, $key );
-    #}
+    $self->{bot}->join_channel( $channel, $key );
+    #TODO: add Channel $channel to $self->{bot}->{serv}->{channels};
 }
 
 sub partChannel {
     my ( $self, $channel, $message ) = @_;
-    return unless defined $self->{bot}->{serv}->{channels}->{$channel};
+    #return unless defined $self->{bot}->{serv}->{channels}->{$channel};
     $self->{bot}->part_channel( $channel, $message );
     delete $self->{channels}->{$channel};
 }
@@ -545,8 +540,6 @@ sub new {
         bots    => {}
     }, $class;
     
-    #print "[D] MySQL information: connecting $self->{mysql_username} @ $self->{mysql_host} : $self->{mysql_database} using password: $self->{mysql_password}\n";
-    
     $self->{dbd} = DBI->connect(
         sprintf( 'DBI:mysql:%s;host=%s', $self->{mysql_database}, $self->{mysql_host} ),
         $self->{mysql_username},
@@ -559,17 +552,11 @@ sub new {
         return undef;
     }
     
-    #print "[D] Connected to MySQL database!\n";
-    
     $self->{dbd}->do('SET NAMES utf8');
     
-    #print "[D] MySQL names set as UTF-8\n";
-    
     if ( $self->init() ) {
-        #print "[D] \$self->init() succeded!\n";
         return $self;
     } else {
-        #print "[D] \$self->init() failed...\n";
         return undef;
     }
 }
@@ -606,31 +593,25 @@ sub init {
         return 0;
     }
     
-    #print '[D] Number of rows in select-servers query: ' . $ps->rows . "\n";
-    
+    print "[I] Loading Modules..."
     foreach my $mod (@{$self->{autoload_modules}}) {
-        print "[I] Loading module $mod...\n";
+        print ">> Loading module $mod\n";
         my $status = $self->loadModule($mod);
         print "\t$status->{string} [Status: $status->{status}, Code: $status->{code}]\n";
         die('Couldn\'t load module ' . $mod . '...') if $status->{status} eq 0;
     }
     
     while ( my $result = $ps->fetchrow_hashref() ) {
-        #print "[D] Creating Saphira::API::Server\n";
         $self->{servers}->{$result->{id}} = new Saphira::API::Server(
             $result->{id},       $result->{servername},       $result->{address},
             $result->{port},     $result->{secure},           $result->{username},
             $result->{password}, $result->{nickservpassword}, $self
         );
-        #print "[D] Creating Saphira::Bot\n";
         $self->{bots}->{$result->{id}} =
           new Saphira::Bot( $self->{servers}->{ $result->{id} }, $self );
         $self->{servers}->{$result->{id}}->_setBot($self->{bots}->{$result->{id}});
         $self->{bots}->{$result->{id}}->_loadChannels();
-        print "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}]\n";
-        print "\t[I] Channels: " . join (',', $self->{bots}->{$result->{id}}->channels()) . "\n";
-        #TODO: Start bot in thread;
-        #$self->{bots}->{$result->{id}}->start();
+        print "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}] {" . join(', ', $self->{bots}->{$result->{id}}->channels()) . "}\n";
         threads->create('runThread',$self->{bots}->{$result->{id}})->join();
     }
     
