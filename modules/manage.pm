@@ -39,7 +39,7 @@ sub handleInvited {
 sub handleSaidChanJoin {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($message->{body} =~ m/^!join\s(#\w+)(?:\s(.+?))?$/);
+    return unless ($message->{body} =~ m/^!join (.+?)(?: (.+?))?$/);
     
     print '>> Joining channel: ' . $1 . ', invited by: ' . $message->{who} . "\n";
     
@@ -52,8 +52,8 @@ sub handleSaidChanJoin {
 sub handleSaidChanPart {
     my ($wrapper, $server, $message) = @_;
     
-    return unless ($message->{body} =~ m/^!part\s(#\w+)(?:\s(.+?))?$/);
-    return unless (getAuthLevel($server, $message) gt 5);
+    return unless ($message->{body} =~ m/^!part (.+?)(?: (.+?))?$/);
+    return unless ($self->getAuthLevel($server, $message) gt 5);
     
     print '>> Parting channel: ' . $1 . ', called by: ' . $message->{who} . "\n";
     
@@ -135,7 +135,7 @@ sub handleSaidLoadModule {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ /^!load(?: module)? ([^ ]+)(?: (.+))?/);
-    return unless (getAuthLevel($server, $message) gt 6);
+    return unless ($self->getAuthLevel($server, $message) gt 6);
     
     my $module = $1;
     my $args   = $2;
@@ -156,7 +156,7 @@ sub handleSaidUnloadModule {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ /^!unload(?: module)? (.+)/);
-    return unless (getAuthLevel($server, $message) gt 6);
+    return unless ($self->getAuthLevel($server, $message) gt 6);
     
     my @modules = split(',', $1);
     
@@ -174,7 +174,7 @@ sub handleSaidReloadModule {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ /^!reload(?: module)? ([^ ]+)(?: (.+))?/);
-    return unless (getAuthLevel($server, $message) gt 6);
+    return unless ($self->getAuthLevel($server, $message) gt 6);
     
     my $module = $1;
     my $args   = $2;
@@ -197,7 +197,7 @@ sub handleSaidEnableModule {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ /^!enable(?: module)? (.+)/);
-    return unless (getAuthLevel($server, $message) gt 6);
+    return unless ($self->getAuthLevel($server, $message) gt 6);
     
     my $ret = $wrapper->enableModule($1);
     
@@ -208,7 +208,7 @@ sub handleSaidDisableModule {
     my ($wrapper, $server, $message) = @_;
     
     return unless ($message->{body} =~ /^!disable(?: module)? (.+)/);
-    return unless (getAuthLevel($server, $message) gt 6);
+    return unless ($self->getAuthLevel($server, $message) gt 6);
     
     my $ret = $wrapper->disableModule($1);
     
@@ -259,7 +259,7 @@ sub handleSaidCmd {
     my ($wrapper, $server, $message) = @_;
     return unless ($message->{body} =~ /^!cmd (.+)$/);
     
-    return unless (getAuthLevel($server, $message) gt 8);
+    return unless ($self->getAuthLevel($server, $message) gt 8);
     
     my @output = `$1 2>&1`;
     

@@ -198,9 +198,6 @@ sub _loadChannels {
 package Saphira::Module;
 use warnings;
 use strict;
-require Exporter;
-our @ISA = qw(Exporter);
-our @EXPORT = qw( getAuthLevel );
 
 sub new {
     my ( $class, $wrapper, $message, $args ) = @_;
@@ -223,7 +220,7 @@ sub registerHook {
 }
 
 sub getAuthLevel {
-    my ($server, $message) = @_;
+    my ($self, $server, $message) = @_;
     my $user = $server->getUser($message->{raw_nick});
     return 0 unless defined $user;
     return 9 if $user->isOperator();
