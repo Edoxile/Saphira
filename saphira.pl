@@ -566,7 +566,7 @@ sub partChannel {
 sub addChannel {
     my ( $self, $data ) = @_;
 
-    my $key = $self->getChannelId( $data->{channel} );
+    my $key = $self->_getChannelId( $data->{channel} );
 
     if ( defined $key ) {
         $self->{channels}->{$key}->enable();
@@ -582,7 +582,7 @@ sub addChannel {
 sub removeChannel {
     my ( $self, $data ) = @_;
 
-    my $key = $self->getChannelId( $data->{channel} );
+    my $key = $self->_getChannelId( $data->{channel} );
 
     return unless defined $key;
     if ( $key gt 0 ) {
