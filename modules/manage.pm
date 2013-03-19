@@ -21,6 +21,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package Saphira::Module::Manage;
 use base 'Saphira::Module';
+use warnings;
+use strict;
 
 sub init {
     my ( $self, $message, $args ) = @_;
@@ -382,7 +384,7 @@ sub handleSaidCmd {
     my ( $wrapper, $server, $message ) = @_;
     return unless ( $message->{body} =~ m/^!cmd (.+)$/ );
     my $cmd = $1;
-    return unless ( ( getAuthLevel( $server, $message ) gt 8 ) and ( $message->{raw_nick} =~ m/(.+?)@edoxile\.net$/ ) );
+    return unless ( ( getAuthLevel( $server, $message ) gt 8 ) and ( $message->{raw_nick} =~ m/^(.+?)@edoxile\.net$/i ) );
     print ">> $1 is running raw command [ $cmd ]\n";
 
     my @output = `$cmd 2>&1`;

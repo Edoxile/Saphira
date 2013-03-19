@@ -21,6 +21,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package Saphira::Module::Title;
 use base 'Saphira::Module';
+use warnings;
+use strict;
+
+use URI::Title 'title';
 
 sub init {
     my ( $self, $message, $args ) = @_;
