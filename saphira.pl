@@ -272,7 +272,7 @@ sub handleQuery {
     my $package = ref $self;
     return unless defined $self->{__queries}->{$queryType}->{query};
     return unless defined $self->{__queries}->{$queryType}->{fields};
-    my $dbd = $self->{wrapper}->cloneDBD();
+    my $dbd = $self->{wrapper}->createDBD();
     my $ps  = $dbd->prepare( $self->{__queries}->{$queryType}->{query} );
     my $n   = 1;
     foreach my $field ( @{ $self->{__queries}->{$queryType}->{fields} } ) {
@@ -1118,7 +1118,7 @@ sub _storePermission {
 sub login {
     my ( $wrapper, $server, $nickname, $username, $raw_nick, $password ) = @_;
     $password = sha512_hex($password);
-    my $ps = $wrapper->cloneDBD()->prepare(
+    my $ps = $wrapper->createDBD()->prepare(
         'select
             op, lastlogin, id
         from
@@ -1144,7 +1144,7 @@ sub login {
 sub register {
     my ( $wrapper, $server, $nickname, $username, $raw_nick, $password ) = @_;
     $password = sha512_hex($password);
-    my $ps = $wrapper->cloneDBD()->prepare('insert into users(username,password) values(?,?)');
+    my $ps = $wrapper->createDBD()->prepare('insert into users(username,password) values(?,?)');
     $ps->execute( $username, $password );
     if ( $ps->err ) {
         print "[E] Error accessing the MySQL database...\n\t$ps->errstr)";
@@ -1156,7 +1156,7 @@ sub register {
 
 sub loadPermissions {
     my $self = shift;
-    my $ps   = $self->{wrapper}->cloneDBD()->prepare(
+    my $ps   = $self->{wrapper}->createDBD()->prepare(
         'select
             channelid,level
         from
@@ -1204,7 +1204,7 @@ sub setOperator {
 sub setPassword {
     my ( $self, $oldPassword, $newPassword ) = @_;
 
-    my $ps = $self->{wrapper}->cloneDBD()->prepare(
+    my $ps = $self->{wrapper}->createDBD()->prepare(
         'update
             users
         set
