@@ -107,9 +107,9 @@ sub handleSaidChanPart {
     print '>> Parting channel: ' . $1 . ', called by: ' . $message->{who} . "\n";
 
     my $channel = $1;
-    my $message = $2;
+    my $msg = $2;
 
-    $server->partChannel( $channel, $message );
+    $server->partChannel( $channel, $msg );
 }
 
 sub handleSaidLogin {
