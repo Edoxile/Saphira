@@ -22,6 +22,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 package Saphira::Module::Admin;
 use base 'Saphira::Module';
 use warnings;
+use warnings;
+use strict;
 use strict;
 
 sub init {
@@ -36,8 +38,6 @@ sub getAuthLevel {
     my ( $server, $message ) = @_;
     my $user = $server->getUser( $message->{raw_nick} );
     return 0 unless defined $user;
-    return 9 if $user->isOperator();
-    return 6 if $user->isChannelOperator();
     return $user->getPermission( $message->{channel} );
 }
 

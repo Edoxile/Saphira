@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 package Saphira::Module::Manage;
 use base 'Saphira::Module';
 use warnings;
+no warnings 'redefine';
 use strict;
 
 sub init {
@@ -74,7 +75,7 @@ sub handleSaidSave {
     return unless ( $message->{channel} ne 'msg' and $message->{body} =~ m/^!save(?:\s([^ ]+))$/ );
     return unless ( getAuthLevel( $server, $message ) gt 6 );
 
-    $chan = $server->getChannel( $message->{channel} );
+    my $chan = $server->getChannel( $message->{channel} );
     return unless defined $chan;
     $chan->setPassword( $1, 1 ) if ( not defined($1) or $1 ne '' );
     if ( $chan->setState(1) ) {
@@ -251,8 +252,8 @@ sub handleSaidLoadModule {
     if ( $module =~ /,/ ) {
         my @modules = split( ',', $module );
         foreach (@modules) {
-            my $ret = $wrapper->loadModule( $_, $message );
-            $server->{bot}->reply( "$ret->{string} [Status: $ret->{status}, Code: $reply->{code}]", $message );
+            my $reply = $wrapper->loadModule( $_, $message );
+            $server->{bot}->reply( "$reply->{string} [Status: $reply->{status}, Code: $reply->{code}]", $message );
         }
     } else {
         my $reply = $wrapper->loadModule( $module, $message, $args );
@@ -384,7 +385,7 @@ sub handleSaidCmd {
     my ( $wrapper, $server, $message ) = @_;
     return unless ( $message->{body} =~ m/^!cmd (.+)$/ );
     my $cmd = $1;
-    return unless ( ( getAuthLevel( $server, $message ) gt 8 ) and ( $message->{raw_nick} =~ m/^(.+?)@edoxile\.net$/i ) );
+    return unless ( ( getAuthLevel( $server, $message ) gt 8 ) and ( $message->{raw_nick} =~ m/^(.+?)\@edoxile\.net$/i ) );
     print ">> $1 is running raw command [ $cmd ]\n";
 
     my @output = `$cmd 2>&1`;
@@ -402,7 +403,7 @@ sub handleKicked {
 
     return unless ( $message->{kicked} eq $server->nick() );
 
-    $chan = $server->getChannel( $message->{channel} );
+    my $chan = $server->getChannel( $message->{channel} );
 
     return unless defined $chan;
 
