@@ -4,33 +4,33 @@ use strict;
 use Config::IniFiles;
 
 END {
-unless ( -e 'saphira.ini' ) {
-    print "[E] No configuration file found. Creating one with placeholder variables. Please\n"
-      . "\tmodify saphira.ini and restart the bot.\n";
+    unless ( -e 'saphira.ini' ) {
+        print "[E] No configuration file found. Creating one with placeholder variables. Please\n"
+          . "\tmodify saphira.ini and restart the bot.\n";
 
-    my $cfg = Config::IniFiles->new();
+        my $cfg = Config::IniFiles->new();
 
-    $cfg->newval( 'mysql', 'host',     'localhost' );
-    $cfg->newval( 'mysql', 'username', 'root' );
-    $cfg->newval( 'mysql', 'password', '' );
-    $cfg->newval( 'mysql', 'database', 'saphira' );
+        $cfg->newval( 'mysql', 'host',     'localhost' );
+        $cfg->newval( 'mysql', 'username', 'root' );
+        $cfg->newval( 'mysql', 'password', '' );
+        $cfg->newval( 'mysql', 'database', 'saphira' );
 
-    $cfg->newval( 'irc', 'autoload', 'manage' );
+        $cfg->newval( 'irc', 'autoload', 'manage' );
 
-    $cfg->WriteConfig('saphira.ini');
+        $cfg->WriteConfig('saphira.ini');
 
-    exit;
-}
+        exit;
+    }
 
-my $cfg = Config::IniFiles->new( -file => 'saphira.ini' );
+    my $cfg = Config::IniFiles->new( -file => 'saphira.ini' );
 
-my $wrapper = new Saphira::Wrapper(
-    $cfg->val( 'mysql', 'host' ),
-    $cfg->val( 'mysql', 'username' ),
-    $cfg->val( 'mysql', 'password' ),
-    $cfg->val( 'mysql', 'database' ),
-    [ split( ',', $cfg->val( 'irc', 'autoload' ) ) ]
-);
+    my $wrapper = new Saphira::Wrapper(
+        $cfg->val( 'mysql', 'host' ),
+        $cfg->val( 'mysql', 'username' ),
+        $cfg->val( 'mysql', 'password' ),
+        $cfg->val( 'mysql', 'database' ),
+        [ split( ',', $cfg->val( 'irc', 'autoload' ) ) ]
+    );
 
 }
 
@@ -54,9 +54,9 @@ sub new {
 
     $self->{IRCNAME}   = 'SaphiraBot' . int( rand(100000) );
     $self->{ALIASNAME} = 'Saphira' . int( rand(100000) );
-    
+
     $self->server( $self->{serv}->{address} );
-    $self->port( int ( $self->{serv}->{port} ) );
+    $self->port( int( $self->{serv}->{port} ) );
     $self->ssl( $self->{serv}->{secure} );
     $self->nick( $self->{serv}->{username} );
 
@@ -65,46 +65,60 @@ sub new {
     $self->name('Saphira, a Perl IRC-bot by Edoxile');
     $self->charset('utf8');
 
-
     $self->init or die "init did not return a true value - dying";
 
     return $self;
 }
 
-sub said   {
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'said', $_[1] ); return;
+sub said {
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'said', $_[1] );
+    return;
 }
 
 sub emoted {
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $_[1] ); return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $_[1] );
+    return;
 }
 
 sub noticed {
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'noticed', $_[1] ); return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'noticed', $_[1] );
+    return;
 }
 
 sub chanjoin {
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'chanjoin', $_[1] ); return;
+    if ( $_[1]->{who} eq $_[0]->nick() ) {
+        $_[0]->{serv}->addChannel( $_[1] );
+    }
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'chanjoin', $_[1] );
+    return;
 }
 
 sub chanpart {
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'chanpart', $_[1] ); return;
+    if ( $_[1]->{who} eq $_[0]->nick() ) {
+        $_[0]->{serv}->removeChannel( $_[1] );
+    }
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'chanpart', $_[1] );
+    return;
 }
 
-sub topic  {
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'topic', $_[1] ); return;
+sub topic {
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'topic', $_[1] );
+    return;
 }
 
 sub kicked {
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'kicked', $_[1] ); return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'kicked', $_[1] );
+    return;
 }
 
 sub userquit {
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'userquit', $_[1] ); return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'userquit', $_[1] );
+    return;
 }
 
 sub invited {
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'invited', $_[1] ); return;
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'invited', $_[1] );
+    return;
 }
 
 sub nick_change {
@@ -185,10 +199,10 @@ sub part_channel {
 }
 
 sub _loadChannels {
-    my $self = shift;
+    my $self     = shift;
     my @channels = ();
-    foreach my $channel (values %{$self->{serv}->{channels}}) {
-        push (@channels, $channel->getName());
+    foreach my $channel ( values %{ $self->{serv}->{channels} } ) {
+        push( @channels, $channel->getName() ) if $channel->getState();
     }
     $self->channels(@channels);
 }
@@ -201,9 +215,9 @@ use strict;
 
 sub new {
     my ( $class, $wrapper, $message, $args ) = @_;
-    
+
     my $self = bless { wrapper => $wrapper }, $class;
-    
+
     $self->init( $message, $args );
 
     return $self;
@@ -229,7 +243,7 @@ use DBI;
 
 sub new {
     my $class = shift;
-    my $self = bless { wrapper => shift }, $class;
+    my $self = bless { wrapper => shift, last_insert_id => -1 }, $class;
     return $self;
 }
 
@@ -238,13 +252,16 @@ sub handleQuery {
     my $package = ref $self;
     return unless defined $self->{__queries}->{$queryType}->{query};
     return unless defined $self->{__queries}->{$queryType}->{fields};
-    my $ps = $self->{wrapper}->cloneDBD()->prepare( $self->{__queries}->{$queryType}->{query} );
-    my $n  = 1;
+    my $dbd = $self->{wrapper}->cloneDBD();
+    my $ps  = $dbd->prepare( $self->{__queries}->{$queryType}->{query} );
+    my $n   = 1;
     foreach my $field ( @{ $self->{__queries}->{$queryType}->{fields} } ) {
         $ps->bind_param( $n, $self->{$field} );
         $n++;
     }
     $ps->execute();
+    $self->{last_insert_id} = $dbd->{q{mysql_insertid}};
+
     return $ps;
 }
 
@@ -256,15 +273,14 @@ use base 'Saphira::API::DBExt';
 
 sub new {
     my $class = shift;
-    my $self = bless {
-        server     => shift,
-        id         => shift,
-        name       => shift,
-        password   => shift,
-        state      => shift,
-        persistent => shift,
-        logging    => shift,
-        __queries  => {
+    my $self  = bless {
+        server    => shift,
+        id        => shift,
+        name      => shift,
+        password  => shift,
+        state     => shift,
+        logging   => shift,
+        __queries => {
             insert => {
                 query => 'insert into channels (
                 server, name, log, password
@@ -308,47 +324,75 @@ sub getName {
     return $self->{name};
 }
 
-sub isPersistent {
+sub getState {
     my $self = shift;
-    return $self->{persistent};
+    return $self->{state};
 }
 
-sub setPersistency {
-    my ( $self, $persistency ) = @_;
-    $persistency = int($persistency);
-    $persistency = ( $persistency > 0 ) ? 1 : 0;
-    return unless $self->{persistent} ne $persistency;
-    if ( $persistency and $self->{state} eq 0 ) {
-        $self->_enable();
-    } elsif ( $persistency and $self->{state} eq -1 ) {
-        $self->_insert();
+sub setPassword {
+    my $self     = shift;
+    my $password = shift;
+    my $noUpdate = shift if @_;
+    $self->{password} = $password;
+    if ( not defined($noUpdate) || $noUpdate ) {
+        my $ps = $self->handleQuery('update');
+        if ( $ps->err ) {
+            print '[E] MySQL error: ' . $ps->errstr . "\n";
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+    return 1;
+}
+
+sub setState {
+    my ( $self, $state ) = @_;
+    $state = ( $state > 0 ) ? 1 : 0;
+    return unless $self->{state} ne $state;
+    if ( $self->{state} eq 0 ) {
+        return $self->enable();
+    } elsif ( $self->{state} eq -1 ) {
+        return $self->insert();
     } else {
-        $self->_disable();
+        return $self->disable();
     }
 }
 
 sub _insert {
     my $self = shift;
     my $ps   = $self->handleQuery('insert');
-    if ( !$ps->err ) {
+    if ( $ps->err ) {
+        return 0;
+    } else {
+        $self->{id}    = $self->{last_insert_id};
         $self->{state} = 1;
         return 1;
     }
-    return 0;
 }
 
 sub _disable {
     my $self = shift;
     $self->{state} = 0;
     my $ps = $self->handleQuery('update');
-    return $ps->err;
+    if ( $ps->err ) {
+        print '[E] MySQL error: ' . $ps->errstr . "\n";
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 sub _enable {
     my $self = shift;
     $self->{state} = 1;
     my $ps = $self->handleQuery('update');
-    return $ps->err;
+    if ( $ps->err ) {
+        print '[E] MySQL error: ' . $ps->errstr . "\n";
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 1;
@@ -359,7 +403,7 @@ use base 'Saphira::API::DBExt';
 
 sub new {
     my $class = shift;
-    my $self = bless {
+    my $self  = bless {
         id               => shift,
         servername       => shift,
         address          => shift,
@@ -369,22 +413,27 @@ sub new {
         password         => shift,
         nickservpassword => shift,
         wrapper          => shift,
+        active           => shift,
         bot              => 0,
-        active           => 0,
         channels         => {},
         users            => {},
         __queries        => {
-            insert => {
-                query  => 'update servers set address = ?, port = ?, secure = ?, password = ?, nickservpassword = ? where id = ?',
-                fields => [ 'address', 'port', 'secure', 'password', 'nickservpassword', 'id' ]
+            update => {
+                query =>
+'update servers set address = ?, port = ?, secure = ?, password = ?, nickservpassword = ?, active = ? where id = ?',
+                fields => [ 'address', 'port', 'secure', 'password', 'nickservpassword', 'active', 'id' ]
             },
             select_channels => {
-                query  => 'select * from channels where state = \'1\' and server = ?',
+                query  => 'select * from channels where server = ?',
                 fields => ['id']
+            },
+            update_active => {
+                query  => 'update servers set active = ? where id = ?',
+                fields => [ 'active', 'id' ]
             }
         }
-      }, $class;
-    
+    }, $class;
+
     $self->init();
 
     return $self;
@@ -397,7 +446,7 @@ sub init {
     while ( my $result = $ps->fetchrow_hashref() ) {
         $self->{channels}->{ $result->{id} } =
           new Saphira::API::Channel( $self, $result->{id}, $result->{name},
-            $result->{password}, $result->{state}, 1, $result->{log} );
+            $result->{password}, $result->{state}, $result->{log} );
     }
 }
 
@@ -423,7 +472,7 @@ sub useSecureConnection {
 
 sub getChannel {
     my ( $self, $channelName ) = @_;
-    my $key = $self->getChannelId($channelName);
+    my $key = $self->_getChannelId($channelName);
     return unless defined $key;
     return $self->{channels}->{$key};
 }
@@ -440,13 +489,33 @@ sub setPassword {
 }
 
 sub getUser {
-    my ($self, $raw_nick) = @_;
+    my ( $self, $raw_nick ) = @_;
     return $self->{users}->{$raw_nick};
 }
 
 sub getUsers {
     my $self = shift;
     return @{ values $self->{users} };
+}
+
+sub getUserByName {
+    my ( $self, $nick ) = @_;
+
+    foreach my $user ( keys %{ $self->{users} } ) {
+        return $user if $user->{username} eq $nick;
+    }
+
+    return undef;
+}
+
+sub getUserByNick {
+    my ( $self, $nick ) = @_;
+
+    foreach my $user ( keys %{ $self->{users} } ) {
+        return $user if $user->{nickname} eq $nick;
+    }
+
+    return undef;
 }
 
 sub addUser {
@@ -466,14 +535,41 @@ sub removeUser {
 sub joinChannel {
     my ( $self, $channel, $key ) = @_;
     $self->{bot}->join_channel( $channel, $key );
-    #TODO: add Channel $channel to $self->{bot}->{serv}->{channels};
 }
 
 sub partChannel {
     my ( $self, $channel, $message ) = @_;
-    #return unless defined $self->{bot}->{serv}->{channels}->{$channel};
+    return unless defined $self->{bot}->{serv}->{channels}->{$channel};
     $self->{bot}->part_channel( $channel, $message );
-    delete $self->{channels}->{$channel};
+}
+
+sub addChannel {
+    my ( $self, $data ) = @_;
+
+    my $key = $self->getChannelId( $data->{channel} );
+
+    if ( defined $key ) {
+        $self->{channels}->{$key}->enable();
+    } else {
+        my $id = 0;
+        do {
+            $id--;
+        } while defined $self->{channels}->{$id};
+        $self->{channels}->{$key} = new Saphira::API::Channel( $self->{id}, $id, $data->{channel}, '', -1, 0 );
+    }
+}
+
+sub removeChannel {
+    my ( $self, $data ) = @_;
+
+    my $key = $self->getChannelId( $data->{channel} );
+
+    return unless defined $key;
+    if ( $key gt 0 ) {
+        $self->{channels}->{$key}->disable();
+    } else {
+        delete $self->{channels}->{$key};
+    }
 }
 
 sub isActive {
@@ -481,9 +577,10 @@ sub isActive {
     return $self->{active};
 }
 
-sub _setActive {
+sub setActive {
     my ( $self, $active ) = @_;
     $self->{active} = ( $active > 0 );
+
 }
 
 sub _getServerId {
@@ -501,7 +598,7 @@ sub _getChannelId {
     return undef;
 }
 
-sub _setBot{
+sub _setBot {
     my ( $self, $bot ) = @_;
     return unless $self->{bot} eq 0;
     $self->{bot} = $bot;
@@ -514,10 +611,10 @@ package Saphira::Wrapper;
 use DBI;
 use threads(
     'yield',
-    'stack_size' => 64*4096,
-    'exit' => 'threads_only',
+    'stack_size' => 64 * 4096,
+    'exit'       => 'threads_only',
     'stringify'
-  );
+);
 
 sub new {
     my $class = shift;
@@ -527,10 +624,10 @@ sub new {
         mysql_password   => shift,
         mysql_database   => shift,
         autoload_modules => shift,
-        servers => {},
-        bots    => {}
+        servers          => {},
+        bots             => {}
     }, $class;
-    
+
     $self->{dbd} = DBI->connect(
         sprintf( 'DBI:mysql:%s;host=%s', $self->{mysql_database}, $self->{mysql_host} ),
         $self->{mysql_username},
@@ -542,9 +639,9 @@ sub new {
         print '[E] MySQL connect error: ' . $DBI::errstr . "\n";
         return undef;
     }
-    
+
     $self->{dbd}->do('SET NAMES utf8');
-    
+
     if ( $self->init() ) {
         return $self;
     } else {
@@ -554,7 +651,7 @@ sub new {
 
 sub cloneDBD {
     my $self = shift;
-    
+
     my $dbd = DBI->connect(
         sprintf( 'DBI:mysql:%s;host=%s', $self->{mysql_database}, $self->{mysql_host} ),
         $self->{mysql_username},
@@ -566,7 +663,7 @@ sub cloneDBD {
         print '[E] MySQL connect error: ' . $DBI::errstr . "\n";
         return undef;
     }
-    
+
     return $dbd;
 }
 
@@ -576,36 +673,40 @@ sub init {
         'select
             *
         from
-            servers'
+            servers
+        where
+            active = TRUE'
     );
     $ps->execute();
     if ( $ps->err ) {
         print '[E] MySQL select error: ' . $ps->errstr . "\n";
         return 0;
     }
-    
+
     print "[I] Loading Modules...\n";
-    foreach my $mod (@{$self->{autoload_modules}}) {
+    foreach my $mod ( @{ $self->{autoload_modules} } ) {
         print ">> Loading module $mod\n";
         my $status = $self->loadModule($mod);
         print "\t$status->{string} [Status: $status->{status}, Code: $status->{code}]\n";
-        die('Couldn\'t load module ' . $mod . '...') if $status->{status} eq 0;
+        die( 'Couldn\'t load module ' . $mod . '...' ) if $status->{status} eq 0;
     }
-    
+
     while ( my $result = $ps->fetchrow_hashref() ) {
-        $self->{servers}->{$result->{id}} = new Saphira::API::Server(
-            $result->{id},       $result->{servername},       $result->{address},
-            $result->{port},     $result->{secure},           $result->{username},
-            $result->{password}, $result->{nickservpassword}, $self
+        $self->{servers}->{ $result->{id} } = new Saphira::API::Server(
+            $result->{id},     $result->{servername}, $result->{address},  $result->{port},
+            $result->{secure}, $result->{username},   $result->{password}, $result->{nickservpassword},
+            $self,             1
         );
-        $self->{bots}->{$result->{id}} =
+        $self->{bots}->{ $result->{id} } =
           new Saphira::Bot( $self->{servers}->{ $result->{id} }, $self );
-        $self->{servers}->{$result->{id}}->_setBot($self->{bots}->{$result->{id}});
-        $self->{bots}->{$result->{id}}->_loadChannels();
-        print "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}] {" . join(', ', $self->{bots}->{$result->{id}}->channels()) . "}\n";
-        threads->create('runThread',$self->{bots}->{$result->{id}})->join();
+        $self->{servers}->{ $result->{id} }->_setBot( $self->{bots}->{ $result->{id} } );
+        $self->{bots}->{ $result->{id} }->_loadChannels();
+        print
+"[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}] {"
+          . join( ', ', $self->{bots}->{ $result->{id} }->channels() ) . "}\n";
+        threads->create( 'runThread', $self->{bots}->{ $result->{id} } )->join();
     }
-    
+
     return 1;
 }
 
@@ -888,25 +989,16 @@ use Digest::SHA 'sha512_hex';
 
 sub new {
     my $class = shift;
-    my $self = bless {
+    my $self  = bless {
         wrapper      => shift,
         server       => shift,
         id           => shift,
         nickname     => shift,
         username     => shift,
         raw_username => shift,
-        lastlogin    => shift,
         op           => shift,
         permissions  => {},
         __queries    => {
-            insert => {
-                query => 'insert into users (
-                server, name, log, password
-            ) values (
-                ?, ?, ?, ?
-            )',
-                fields => [ 'server', 'name', 'logging', 'password' ]
-            },
             update_op => {
                 query => 'update
                 users
@@ -915,33 +1007,6 @@ sub new {
             where
                 id = ?',
                 fields => [ 'op', 'id' ]
-            },
-            update_password => {
-                query => 'update
-                users
-            set
-                password = ?
-            where
-                id = ?',
-                fields => [ 'password', 'op', 'id' ]
-            },
-            update_lastlogin => {
-                query => 'update
-                users
-            set
-                lastlogin = now()
-            where
-                id = ?',
-                fields => ['id']
-            },
-            select_permissions => {
-                query => 'select
-                channelid, level
-            from
-                permissios
-            where
-                userid = ?',
-                fields => ['id']
             }
           }
 
@@ -975,6 +1040,7 @@ sub getRawUsername {
 sub getPermission {
     my ( $self, $chan ) = @_;
     return 9 if $self->{op};
+    return 6 if $self->isChannelOperator($chan);
     my $chanId = undef;
     if ( $chan =~ /^\d+$/ ) {
         $chanId = int($chan);
@@ -1021,13 +1087,12 @@ sub _reloadPermissions {
 sub _storePermission {
     my ( $self, $userId, $chanId, $level ) = @_;
     my $ps = $self->{wrapper}->{dbh}->prepare(
-        'insert into permissions(
+        'insert into permissions (
             userid, channelid, level
-        )
-        values(
+        ) values (
             ?, ?, ?
         )
-        on duplicate key update level=?'
+        on duplicate key update level = ?'
     );
     $ps->execute( $userId, $chanId, $level, $level );
     if ( $ps->err ) {
@@ -1037,16 +1102,6 @@ sub _storePermission {
         $self->{server}->{users}->{$userId}->{$chanId} = $level;
         return 1;
     }
-}
-
-sub setUsername {
-    my ( $self, $new ) = @_;
-    $self->{user} = $new;
-}
-
-sub getLastLogin {
-    my $self = @_;
-    return $self->{lastlogin};
 }
 
 sub login {
@@ -1068,11 +1123,23 @@ sub login {
         my $result = $ps->fetchrow_hashref();
         return 0 unless defined $result;
         my $user =
-          new Saphira::API::User( $wrapper, $server, $result->{id}, $nickname,
-            $username, $raw_nick, $result->{lastlogin}, $result->{op} );
+          new Saphira::API::User( $wrapper, $server, $result->{id}, $nickname, $username, $raw_nick, $result->{op} );
         $user->loadPermissions();
         $server->addUser($user);
         return 1;
+    }
+}
+
+sub register {
+    my ( $wrapper, $server, $nickname, $username, $raw_nick, $password ) = @_;
+    $password = sha512_hex($password);
+    my $ps = $wrapper->cloneDBD()->prepare('insert into users(username,password) values(?,?)');
+    $ps->execute( $username, $password );
+    if ( $ps->err ) {
+        print "[E] Error accessing the MySQL database...\n\t$ps->errstr)";
+        return 0;
+    } else {
+        return login( $wrapper, $server, $nickname, $username, $raw_nick, $password );
     }
 }
 
@@ -1113,17 +1180,35 @@ sub isOperator {
 
 sub setOperator {
     my ( $self, $op ) = @_;
-    $self->{op} = int($op) > 0;
-    $self->_update();
+    $self->{op} = ( int($op) gt 0 );
+    my $ps = $self->handleQuery('update_op');
+
+    if ( $ps->err ) {
+        print '[E] MySQL error: ' . $ps->errstr . "\n";
+    }
+
+    return $ps->rows;
 }
 
 sub setPassword {
-    my ( $self, $password ) = @_;
-    $self->{password} = $password;
+    my ( $self, $oldPassword, $newPassword ) = @_;
 
-    #TODO: finish
+    my $ps = $self->{wrapper}->cloneDBD()->prepare(
+        'update
+            users
+        set
+            password = ?
+        where
+            id = ? and password = ?'
+    );
+
+    $ps->execute( $self->{id}, sha512_hex($newPassword), sha512_hex($oldPassword) );
+
+    if ( $ps->err ) {
+        print '[E] MySQL error: ' . $ps->errstr . "\n";
+    }
+
+    return $ps->rows;
 }
 
 1;
-
-#1;
