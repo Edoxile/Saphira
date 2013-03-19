@@ -222,7 +222,7 @@ sub _loadChannels {
     my $self     = shift;
     my @channels = ();
     foreach my $channel ( values %{ $self->{serv}->{channels} } ) {
-        push( @channels, $channel->getName() ) if $channel->getState();
+        push( @channels, $channel->getName() ) if ( $channel->getState() eq 1 );
     }
     $self->channels(@channels);
 }
@@ -576,7 +576,7 @@ sub addChannel {
         do {
             $id--;
         } while defined $self->{channels}->{$id};
-        $self->{channels}->{$key} = new Saphira::API::Channel( $self->{id}, $id, $data->{channel}, '', -1, 0 );
+        $self->{channels}->{$id} = new Saphira::API::Channel( $self->{id}, $id, $data->{channel}, '', -1, 0 );
     }
 }
 
