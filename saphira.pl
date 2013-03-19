@@ -68,8 +68,7 @@ sub new {
     my $class = shift;
     my $self  = bless {
         serv    => shift,
-        wrapper => shift,
-        thread  => 0
+        wrapper => shift
     }, $class;
 
     $self->{IRCNAME}   = 'SaphiraBot' . int( rand(100000) );
