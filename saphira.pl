@@ -295,6 +295,7 @@ sub new {
     my $class = shift;
     my $self  = bless {
         server    => shift,
+        wrapper   => shift,
         id        => shift,
         name      => shift,
         password  => shift,
@@ -465,7 +466,7 @@ sub init {
     my $ps = $self->handleQuery('select_channels');
     while ( my $result = $ps->fetchrow_hashref() ) {
         $self->{channels}->{ $result->{id} } =
-          new Saphira::API::Channel( $self, $result->{id}, $result->{name},
+          new Saphira::API::Channel( $self, $self->{wrapper}, $result->{id}, $result->{name},
             $result->{password}, $result->{state}, $result->{log} );
     }
 }
@@ -648,19 +649,7 @@ sub new {
         bots             => {}
     }, $class;
 
-    $self->{dbd} = DBI->connect(
-        sprintf( 'DBI:mysql:%s;host=%s', $self->{mysql_database}, $self->{mysql_host} ),
-        $self->{mysql_username},
-        $self->{mysql_password},
-        { 'mysql_enable_utf8' => 1 }
-    );
-
-    if ( not $self->{dbd} ) {
-        print '[E] MySQL connect error: ' . $DBI::errstr . "\n";
-        return undef;
-    }
-
-    $self->{dbd}->do('SET NAMES utf8');
+    $self->{dbd} = $self->createDBD();
 
     if ( $self->init() ) {
         return $self;
@@ -669,7 +658,7 @@ sub new {
     }
 }
 
-sub cloneDBD {
+sub createDBD {
     my $self = shift;
 
     my $dbd = DBI->connect(
@@ -683,6 +672,8 @@ sub cloneDBD {
         print '[E] MySQL connect error: ' . $DBI::errstr . "\n";
         return undef;
     }
+
+    $dbd->do('SET NAMES utf8');
 
     return $dbd;
 }
