@@ -1120,7 +1120,7 @@ sub login {
     $password = sha512_hex($password);
     my $ps = $wrapper->createDBD()->prepare(
         'select
-            op, lastlogin, id
+            op, id
         from
             users
         where
