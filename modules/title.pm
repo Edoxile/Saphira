@@ -22,8 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 package Saphira::Module::Title;
 use base 'Saphira::Module';
 use warnings;
-use warnings;
-use strict;
+no warnings 'redefine';
 use strict;
 
 use URI::Title 'title';
@@ -31,13 +30,13 @@ use URI::Title 'title';
 sub init {
     my ( $self, $message, $args ) = @_;
     
-    $self->registerHook('said', \&handleSaid);
+    $self->registerHook('said', \&handleSaidTitle);
 }
 
-sub handleSaid {
-    my ($bot, $message) = @_;
+sub handleSaidTitle {
+    my ( $wrapper, $server, $message ) = @_;
     
-    return unless ($message->{body} =~ m/((?:https?:\/\/|www\.)[-~=\\\/a-zA-Z0-9\.:_\?\&\%,#\+]+)/);
+    return unless ($message->{body} =~ m/((?:https?:\/\/|www\.)[-~=\\\/a-zA-Z0-9\.:_\?&%,#\+]+)/);
     return if ($1 eq '');
     
     my $title = title($1);
