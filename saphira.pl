@@ -569,7 +569,7 @@ sub addChannel {
     my $key = $self->_getChannelId( $data->{channel} );
 
     if ( defined $key ) {
-        $self->{channels}->{$key}->enable();
+        $self->{channels}->{$key}->_enable();
     } else {
         my $id = 0;
         do {
@@ -586,7 +586,7 @@ sub removeChannel {
 
     return unless defined $key;
     if ( $key gt 0 ) {
-        $self->{channels}->{$key}->disable();
+        $self->{channels}->{$key}->_disable();
     } else {
         delete $self->{channels}->{$key};
     }
