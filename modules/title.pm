@@ -37,7 +37,7 @@ sub init {
 sub handleSaid {
     my ($bot, $message) = @_;
     
-    return unless ($message->{body} =~ /((?:https?:\/\/|www\.)[-~=\\\/a-zA-Z0-9\.:_\?&%,#\+]+)/);
+    return unless ($message->{body} =~ m/((?:https?:\/\/|www\.)[-~=\\\/a-zA-Z0-9\.:_\?\&\%,#\+]+)/);
     return if ($1 eq '');
     
     my $title = title($1);
