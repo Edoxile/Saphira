@@ -212,13 +212,13 @@ sub join_channel {
     $poe_kernel->post( $self->{IRCNAME}, 'join', $channel, $key );
 }
 
-sub join_channel {
-    my ( $self, $channel, $key ) = @_;
+sub part_channel {
+    my ( $self, $channel, $msg ) = @_;
     $key = '' unless defined($key);
-    $poe_kernel->post( $self->{IRCNAME}, 'join', $channel, $key );
+    $poe_kernel->post( $self->{IRCNAME}, 'part', $channel, $msg );
 }
 
-sub part_channel {
+sub kick {
     my ( $self, $user, $channel, $reason ) = @_;
     $poe_kernel->post( $self->{IRCNAME}, 'kick', $channel, $user, $reason );
 }
