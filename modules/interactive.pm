@@ -25,6 +25,7 @@ use base 'Saphira::Module';
 use warnings;
 no warnings 'redefine';
 use strict;
+use switch;
 
 sub init {
     my ( $self, $message, $args ) = @_;
