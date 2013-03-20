@@ -48,10 +48,9 @@ sub handleSaidCalculate {
 
     return unless ( $message->{body} =~ m/^!calc(?:ulate)? (.+)$/ );
     if ( $1 =~ m/^[\-\+\^\/\*0-9\s]+$/ ) {
-        my $answer = undef;
         my $input  = $1;
         $input =~ s/\^/\*\*/;
-        eval '$answer = ' . $input . ';';
+        my $answer = eval ($input);
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
@@ -90,10 +89,9 @@ sub handleSaidInlineCalculate {
 
     return unless ( $message->{body} =~ m/calc(?:ulate)?\[(.+?)\]/ );
     if ( $1 =~ m/^[\-\+\^\/\*0-9\s]+$/ ) {
-        my $answer = undef;
         my $input  = $1;
         $input =~ s/\^/\*\*/;
-        eval '$answer = ' . $input . ';';
+        my $answer = eval ($input);
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
