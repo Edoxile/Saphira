@@ -75,7 +75,7 @@ sub handleSaidNowPlaying {
               . $track->{artist}->{'#text'} . ' - '
               . $track->{album}->{'#text'} . ' - '
               . $track->{name} . "\x0F.";
-            break;
+            last;
         }
     }
 
