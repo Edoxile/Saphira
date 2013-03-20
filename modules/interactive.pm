@@ -71,3 +71,5 @@ sub handleEmotedThanks {
 
     $server->{bot}->reply( $reply, $message );
 }
+
+1;
