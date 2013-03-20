@@ -30,63 +30,83 @@ use Google::Search;
 use HTML::Entities;
 use Encode;
 
+sub init {
+    my ( $self, $message, $args ) = @_;
+
+    $self->registerHook( 'said', \&handleWebSearch );
+    $self->registerHook( 'said', \&handleYoutubeSearch );
+    $self->registerHook( 'said', \&handleImageSearch );
+}
+
 sub handleWebSearch {
     my ( $wrapper, $server, $message ) = @_;
-    
-    return unless ($message->{body} =~ m/^!g(?:oogle)? (.+?)$/);
-    
+
+    return unless ( $message->{body} =~ m/^!g(?:oogle)? (.+?)$/ );
+
     print '>> Google search term: [ ' . $1 . " ]\n";
-    
+
     my $search = Google::Search->Web( hl => 'nl', query => $1 );
     my $result = $search->first;
 
-    if (!defined($result)) {
-        $server->{bot}->reply( 'I\'m Sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . '\' on Google.', $message );
+    if ( !defined($result) ) {
+        $server->{bot}
+          ->reply( 'I\'m Sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . '\' on Google.',
+            $message );
     } else {
-        my $reply = $message->{who} . ': ' . decodeTitle( HTML::Entities::decode( $result->titleNoFormatting ) ) . ' - ' . $result->uri;
+        my $reply =
+            $message->{who} . ': '
+          . decodeTitle( HTML::Entities::decode( $result->titleNoFormatting ) ) . ' - '
+          . $result->uri;
         $server->{bot}->reply( $reply, $message );
     }
 }
 
 sub handleYoutubeSearch {
     my ( $wrapper, $server, $message ) = @_;
-    
-    return unless ($message->{body} =~ m/^!y(?:outube)? (.+?)$/);
-    
+
+    return unless ( $message->{body} =~ m/^!y(?:outube)? (.+?)$/ );
+
     print '>> Youtube search term: [ ' . $1 . " ]\n";
-    
+
     my $search = Google::Search->Web( hl => 'nl', query => 'site:youtube.com ' . $1 );
     my $result = $search->first;
 
-    if (!defined($result)) {
-        $server->{bot}->reply( 'I\'m Sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . '\' on Youtube.', $message );
+    if ( !defined($result) ) {
+        $server->{bot}
+          ->reply( 'I\'m Sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . '\' on Youtube.',
+            $message );
     } else {
-        my $reply = $message->{who} . ': ' . decodeTitle( HTML::Entities::decode( $result->titleNoFormatting ) ) . ' - ' . $result->uri;
+        my $reply =
+            $message->{who} . ': '
+          . decodeTitle( HTML::Entities::decode( $result->titleNoFormatting ) ) . ' - '
+          . $result->uri;
         $server->{bot}->reply( $reply, $message );
     }
 }
 
 sub handleImageSearch {
     my ( $wrapper, $server, $message ) = @_;
-    
-    return unless ($message->{body} =~ m/^!g(?:oogle)?i(?:mages) (.+?)$/);
-    
+
+    return unless ( $message->{body} =~ m/^!g(?:oogle)?i(?:mages) (.+?)$/ );
+
     print '>> Google image search term: [ ' . $1 . " ]\n";
-    
+
     my $search = Google::Search->Image( hl => 'nl', query => $1 );
     my $result = $search->first;
 
-    if (!defined($result)) {
-        $server->{bot}->reply( 'I\'m Sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . '\' on Google Images.', $message );
+    if ( !defined($result) ) {
+        $server->{bot}
+          ->reply( 'I\'m Sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . '\' on Google Images.',
+            $message );
     } else {
         my $reply = $message->{who} . ': ' . $result->uri;
         $server->{bot}->reply( $reply, $message );
     }
 }
-    
+
 sub decodeTitle {
     my $title = shift;
-    $title = decode('utf-8', $title, 1) || $title;
+    $title = decode( 'utf-8', $title, 1 ) || $title;
     $title =~ s/\s+$//;
     $title =~ s/^\s+//;
     $title =~ s/\n+//g;
