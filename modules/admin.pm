@@ -46,7 +46,7 @@ sub handleSaidKick {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/^!kick\s(.+?)(?:\s(.+?))$/ );
-
+    
     $server->getChannel( $message->{channel} )->kick( $1, $2 );
 }
 

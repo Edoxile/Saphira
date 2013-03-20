@@ -48,7 +48,7 @@ sub init {
 sub handleSaidNowPlaying {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/^!n(?:ow)?p(?:laying) ([^\s]+)$/ );
+    return unless ( $message->{body} =~ m/^!n(?:ow)?p(?:laying)? ([^\s]+)$/ );
 
     my $url =
       'http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&format=json&user=' . $1 . '&api_key=' . $apiKey;

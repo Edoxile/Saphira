@@ -212,10 +212,15 @@ sub join_channel {
     $poe_kernel->post( $self->{IRCNAME}, 'join', $channel, $key );
 }
 
+sub join_channel {
+    my ( $self, $channel, $key ) = @_;
+    $key = '' unless defined($key);
+    $poe_kernel->post( $self->{IRCNAME}, 'join', $channel, $key );
+}
+
 sub part_channel {
-    my ( $self, $channel, $part_msg ) = @_;
-    $part_msg ||= ( 'Saphira v' . $version );
-    $poe_kernel->post( $self->{IRCNAME}, 'part', $channel, $part_msg );
+    my ( $self, $user, $channel, $reason ) = @_;
+    $poe_kernel->post( $self->{IRCNAME}, 'kick', $channel, $user, $reason );
 }
 
 sub _loadChannels {
@@ -378,6 +383,13 @@ sub setState {
     } else {
         return $self->disable();
     }
+}
+
+sub kick {
+    my $self = shift;
+    my $user = shift;
+    my $reason = shift || 'Bye bye!';
+    $self->{server}->kick($user,$self->{name},$reason);
 }
 
 sub _insert {
@@ -602,6 +614,15 @@ sub setActive {
     my ( $self, $active ) = @_;
     $self->{active} = ( $active > 0 );
 
+}
+
+sub isChannelOperator {
+    my ( $self, $user, $chan ) = @_;
+    my $state = $self->{bot}->pocoirc();
+    return
+         $state->is_channel_operator( $chan, $user )
+      || $state->is_channel_owner( $chan, $user )
+      || $state->is_channel_halfop( $chan, $user );
 }
 
 sub _getServerId {
@@ -974,6 +995,7 @@ sub moduleLoaded {
 
 sub moduleActive {
     my ( $self, $module ) = @_;
+    return ( ( $self->moduleLoaded($module) && ( $self->{modules}->{ lc($module) }->{enabled} == 1 ) ) ? 1 : 0 );
     return ( ( $self->moduleLoaded($module) && ( $self->{modules}->{ lc($module) }->{enabled} == 1 ) ) ? 1 : 0 );
 }
 
