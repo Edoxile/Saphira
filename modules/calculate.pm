@@ -47,10 +47,11 @@ sub handleSaidCalculate {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/^!calc(?:ulate)? (.+)$/ );
+    my $input  = $1;
     if ( $1 =~ m/^[\-\+\^\/\*0-9\s]+$/ ) {
-        my $input  = $1;
         $input =~ s/\^/\*\*/;
         my $answer = eval ($input);
+        print '[D] ' . $answer . "\n";
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
@@ -88,10 +89,11 @@ sub handleSaidInlineCalculate {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/calc(?:ulate)?\[(.+?)\]/ );
+    my $input  = $1;
     if ( $1 =~ m/^[\-\+\^\/\*0-9\s]+$/ ) {
-        my $input  = $1;
         $input =~ s/\^/\*\*/;
         my $answer = eval ($input);
+        print '[D] ' . $answer . "\n";
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
