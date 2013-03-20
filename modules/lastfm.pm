@@ -48,8 +48,8 @@ sub init {
 sub handleSaidNowPlaying {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/^!n(?:ow)?p(?:laying)? ([^\s]+)$/ );
-
+    return unless ( $message->{body} =~ m/^!n(?:ow)?p(?:laying)?(?: ([^\s]+))?$/ );
+    my $1 = $message->{who} if ( not defined $1 or $1 eq '' );
     my $url =
       'http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&format=json&user=' . $1 . '&api_key=' . $apiKey;
     my $raw_data = get($url);
@@ -69,12 +69,9 @@ sub handleSaidNowPlaying {
             and defined $track->{'@attr'}->{nowplaying}
             and $track->{'@attr'}->{nowplaying} eq 'true' )
         {
-            $reply =
-                $1
-              . " is now playing: \x02"
-              . $track->{artist}->{'#text'} . ' - '
-              . $track->{album}->{'#text'} . ' - '
-              . $track->{name} . "\x0F.";
+            $reply = $1 . " is now playing: \x02" . $track->{artist}->{'#text'} . ' - ';
+            $reply .= $track->{album}->{'#text'} . ' - ' if ( defined $track->{album}->{'#text'} and $track->{album}->{'#text'} ne '' );
+            $reply .= $track->{name} . "\x0F.";
             last;
         }
     }
