@@ -86,7 +86,7 @@ sub handleSaidCalculate {
     }
 }
 
-sub handleInlineCalculate {
+sub handleSaidInlineCalculate {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/calc(?:ulate)\[(.+?)\]/ );
