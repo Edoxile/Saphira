@@ -59,7 +59,7 @@ sub handleSaidCalculate {
         }
     } else {
         print '>> WolframAlpha query: [ ' . $1 . " ]\n";
-        my $query     = $wolframAlpha->query( input => $input, format => 'plaintext' );
+        my $query     = $self->{wolframAlpha}->query( input => $1, format => 'plaintext' );
         my $response  = '';
         my @responses = ();
 
@@ -79,7 +79,7 @@ sub handleSaidCalculate {
             }
         } else {
             $response =
-              'I\'m sorry ' . $message->{who} . ', I can\'t find anything for \'' . $input . "' on WolframAlpha.\n";
+              'I\'m sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . "' on WolframAlpha.\n";
         }
         $self->{bot}->reply( $response, $message );
     }
