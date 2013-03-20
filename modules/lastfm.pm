@@ -50,7 +50,7 @@ sub handleSaidNowPlaying {
 
     return unless ( $message->{body} =~ m/^!n(?:ow)?p(?:laying)?(?: ([^\s]+))?$/ );
     my $user = $1;
-    my $user = $message->{who} if ( not defined $user or $user eq '' );
+    $user = $message->{who} if ( not defined $user or $user eq '' );
     my $url =
       'http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&format=json&user=' . $user . '&api_key=' . $apiKey;
     my $raw_data = get($url);
