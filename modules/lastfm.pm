@@ -31,9 +31,8 @@ use JSON::XS;
 
 our $parser = undef;
 our $apiKey = undef;
-our $url =
 
-  sub init {
+sub init {
     my ( $self, $message, $args ) = @_;
 
     $apiKey = Config::IniFiles->new( -file => 'saphira.ini' )->val( 'irc', 'LastFMkey' );
