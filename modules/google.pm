@@ -79,7 +79,7 @@ sub handleImageSearch {
     if (!defined($result)) {
         $server->{bot}->reply( 'I\'m Sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . '\' on Google Images.', $message );
     } else {
-        my $reply = $who . ': ' . $result->uri;
+        my $reply = $message->{who} . ': ' . $result->uri;
         $server->{bot}->reply( $reply, $message );
     }
 }
