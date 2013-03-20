@@ -49,17 +49,18 @@ sub handleSaidNowPlaying {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/^!n(?:ow)?p(?:laying)?(?: ([^\s]+))?$/ );
-    my $1 = $message->{who} if ( not defined $1 or $1 eq '' );
+    my $user = $1;
+    my $user = $message->{who} if ( not defined $user or $user eq '' );
     my $url =
-      'http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&format=json&user=' . $1 . '&api_key=' . $apiKey;
+      'http://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&format=json&user=' . $user . '&api_key=' . $apiKey;
     my $raw_data = get($url);
     if ( not defined $raw_data or $raw_data eq '' ) {
-        $server->{bot}->reply("\x02Error:\x0F Couldn't fetch data for user $1. Is his/her name spelled correctly?");
+        $server->{bot}->reply("\x02Error:\x0F Couldn't fetch data for user $user. Is his/her name spelled correctly?");
     }
 
     my $data = $parser->decode($raw_data);
     if ( not defined $data ) {
-        $server->{bot}->reply("\x02Error:\x0F Couldn't fetch data for user $1. Is his/her name spelled correctly?");
+        $server->{bot}->reply("\x02Error:\x0F Couldn't fetch data for user $user. Is his/her name spelled correctly?");
     }
 
     my $reply = '';
@@ -69,7 +70,7 @@ sub handleSaidNowPlaying {
             and defined $track->{'@attr'}->{nowplaying}
             and $track->{'@attr'}->{nowplaying} eq 'true' )
         {
-            $reply = $1 . " is now playing: \x02" . $track->{artist}->{'#text'} . ' - ';
+            $reply = $user . " is now playing: \x02" . $track->{artist}->{'#text'} . ' - ';
             $reply .= $track->{album}->{'#text'} . ' - ' if ( defined $track->{album}->{'#text'} and $track->{album}->{'#text'} ne '' );
             $reply .= $track->{name} . "\x0F.";
             last;
