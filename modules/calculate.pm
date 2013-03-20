@@ -90,8 +90,9 @@ sub handleSaidInlineCalculate {
 
     return unless ( $message->{body} =~ m/calc(?:ulate)?\[(.+?)\]/ );
     my $input = $1;
-    if ( $1 =~ m/^[\-\+\^\/\*0-9\s]+$/ ) {
-        $input =~ s/\^/\*\*/;
+    if ( $1 =~ m/^[\-\+\^\/\*0-9\sx]+$/ ) {
+        $input =~ s/\^/\*\*/g;
+        $input =~ s/x/\*/g;
         my $answer = eval($input);
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
