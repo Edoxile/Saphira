@@ -57,7 +57,7 @@ sub handleSaidNowPlaying {
         $server->{bot}->reply("\x02Error:\x0F Couldn't fetch data for user $1. Is his/her name spelled correctly?");
     }
 
-    my $data = $coder->decode($raw_data);
+    my $data = $parser->decode($raw_data);
     if ( not defined $data ) {
         $server->{bot}->reply("\x02Error:\x0F Couldn't fetch data for user $1. Is his/her name spelled correctly?");
     }
