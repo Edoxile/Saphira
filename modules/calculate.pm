@@ -81,7 +81,7 @@ sub handleSaidCalculate {
             $response =
               'I\'m sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . "' on WolframAlpha.\n";
         }
-        $self->{bot}->reply( $response, $message );
+        $server->{bot}->reply( $response, $message );
     }
 }
 
