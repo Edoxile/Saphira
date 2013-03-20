@@ -80,7 +80,7 @@ sub handleSaidNowPlaying {
     if ( $reply ne '' ) {
         $server->{bot}->reply( $reply, $message );
     } else {
-        $server->{bot}->reply( "Couldn't find ", $message );
+        $server->{bot}->reply( $user . ' is probably playing nothing at the moment.', $message );
     }
 }
 
