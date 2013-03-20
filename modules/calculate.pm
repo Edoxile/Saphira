@@ -51,7 +51,7 @@ sub handleSaidCalculate {
         my $answer = undef;
         my $input  = $1;
         $1 =~ s/\^/\*\*/;
-        eval {'$answer = ' . $1};
+        eval '$answer = ' . $1;
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
@@ -93,7 +93,7 @@ sub handleSaidInlineCalculate {
         my $answer = undef;
         my $input  = $1;
         $1 =~ s/\^/\*\*/;
-        eval {'$answer = ' . $1};
+        eval '$answer = ' . $1;
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
