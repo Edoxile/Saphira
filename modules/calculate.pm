@@ -50,8 +50,8 @@ sub handleSaidCalculate {
     if ( $1 =~ m/^[\-\+\^\/\*0-9\s]+$/ ) {
         my $answer = undef;
         my $input  = $1;
-        $1 =~ s/\^/\*\*/;
-        eval '$answer = ' . $1 . ';';
+        $input =~ s/\^/\*\*/;
+        eval '$answer = ' . $input . ';';
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
@@ -92,8 +92,8 @@ sub handleSaidInlineCalculate {
     if ( $1 =~ m/^[\-\+\^\/\*0-9\s]+$/ ) {
         my $answer = undef;
         my $input  = $1;
-        $1 =~ s/\^/\*\*/;
-        eval '$answer = ' . $1 . ';';
+        $input =~ s/\^/\*\*/;
+        eval '$answer = ' . $input . ';';
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
