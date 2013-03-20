@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+
 =begin comment
 Copyright (c) 2013.
 
@@ -107,7 +108,7 @@ sub handleSaidChanPart {
     print '>> Parting channel: ' . $1 . ', called by: ' . $message->{who} . "\n";
 
     my $channel = $1;
-    my $msg = $2;
+    my $msg     = $2;
 
     $server->partChannel( $channel, $msg );
 }
@@ -385,7 +386,8 @@ sub handleSaidCmd {
     my ( $wrapper, $server, $message ) = @_;
     return unless ( $message->{body} =~ m/^!cmd (.+)$/ );
     my $cmd = $1;
-    return unless ( ( getAuthLevel( $server, $message ) gt 8 ) and ( $message->{raw_nick} =~ m/^(.+?)\@edoxile\.net$/i ) );
+    return
+      unless ( ( getAuthLevel( $server, $message ) gt 8 ) and ( $message->{raw_nick} =~ m/^(.+?)\@edoxile\.net$/i ) );
     print ">> $1 is running raw command [ $cmd ]\n";
 
     my @output = `$cmd 2>&1`;

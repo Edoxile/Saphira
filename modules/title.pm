@@ -1,4 +1,5 @@
 #!/usr/bin/env perl
+
 =begin comment
 Copyright (c) 2013.
 
@@ -29,19 +30,19 @@ use URI::Title 'title';
 
 sub init {
     my ( $self, $message, $args ) = @_;
-    
-    $self->registerHook('said', \&handleSaidTitle);
+
+    $self->registerHook( 'said', \&handleSaidTitle );
 }
 
 sub handleSaidTitle {
     my ( $wrapper, $server, $message ) = @_;
-    
-    return unless ($message->{body} =~ m/((?:https?:\/\/|www\.)[-~=\\\/a-zA-Z0-9\.:_\?&%,#\+]+)/);
-    return if ($1 eq '');
-    
+
+    return unless ( $message->{body} =~ m/((?:https?:\/\/|www\.)[-~=\\\/a-zA-Z0-9\.:_\?&%,#\+]+)/ );
+    return if ( $1 eq '' );
+
     my $title = title($1);
     return unless defined($title);
-    
+
     $server->{bot}->say(
         who     => $message->{who},
         channel => $message->{channel},
