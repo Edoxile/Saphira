@@ -27,6 +27,7 @@ no warnings 'redefine';
 use strict;
 
 use WWW::WolframAlpha;
+our $wolframAlpha = undef;
 
 sub init {
     my ( $self, $message, $args ) = @_;
@@ -36,7 +37,7 @@ sub init {
     print "[E] WolframAlpha AppID not found; not registering hooks\n" if not defined $id;
     return unless defined $id;
 
-    $self->{wolframAlpha} = WWW::WolframAlpha->new( appid => $id );
+    $wolframAlpha = WWW::WolframAlpha->new( appid => $id );
 
     $self->registerHook( 'said', \&handleSaidCalculate );
     $self->registerHook( 'said', \&handleSaidInlineCalculate );
@@ -59,7 +60,7 @@ sub handleSaidCalculate {
         }
     } else {
         print '>> WolframAlpha query: [ ' . $1 . " ]\n";
-        my $query     = $self->{wolframAlpha}->query( input => $1, format => 'plaintext' );
+        my $query     = $wolframAlpha->query( input => $1, format => 'plaintext' );
         my $response  = '';
         my @responses = ();
 
