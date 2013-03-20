@@ -47,9 +47,7 @@ sub handleSaidCalculate {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/^!calc(?:ulate)? (.+)$/ );
-    my $2 = $1;
-    $2 =~ s/\s+//g;
-    if ( $2 =~ m/^[\-\+\^\/\*0-9]+$/ ) {
+    if ( $1 =~ m/^[\-\+\^\/\*0-9\s]+$/ ) {
         my $answer = undef;
         my $input  = $1;
         $1 =~ s/\^/\*\*/;
@@ -91,8 +89,7 @@ sub handleSaidInlineCalculate {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/calc(?:ulate)?\[(.+?)\]/ );
-    $1 =~ s/\s+//g;
-    if ( $1 =~ m/^[\-\+\^\/\*0-9]+$/ ) {
+    if ( $1 =~ m/^[\-\+\^\/\*0-9\s]+$/ ) {
         my $answer = undef;
         my $input  = $1;
         $1 =~ s/\^/\*\*/;
