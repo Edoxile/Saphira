@@ -214,7 +214,7 @@ sub join_channel {
 
 sub part_channel {
     my ( $self, $channel, $msg ) = @_;
-    $msg = 'Bye!' unless defined(msg);
+    $msg = 'Bye!' unless defined($msg);
     $poe_kernel->post( $self->{IRCNAME}, 'part', $channel, $msg );
 }
 
