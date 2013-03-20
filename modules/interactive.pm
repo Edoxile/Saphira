@@ -38,7 +38,7 @@ sub handleSaidThanks {
 
     return unless ( $message->{body} =~ m/(thanks|thank you) Saphira/i );
 
-    $server->{bot}->reply( "You're welcome, $message->{who}!", $reply );
+    $server->{bot}->reply( "You're welcome, $message->{who}!", $message );
 }
 
 sub handleEmotedThanks {
