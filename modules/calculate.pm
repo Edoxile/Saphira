@@ -46,13 +46,13 @@ sub init {
 sub handleSaidCalculate {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/^!calc(?:ulate) (.+)$/ );
+    return unless ( $message->{body} =~ m/^!calc(?:ulate)? (.+)$/ );
 
     if ( $1 =~ m/^[\-\+\^\/\*0-9]+$/ ) {
         my $answer = undef;
         my $input  = $1;
-        $input =~ s/\^/\*\*/;
-        eval '$answer = ' . $1;
+        $1 =~ s/\^/\*\*/;
+        eval {'$answer = ' . $1};
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
@@ -67,7 +67,7 @@ sub handleSaidCalculate {
         if ( $query->success && $query->numpods > 0 ) {
             my @pods = @{ $query->pods };
             @pods = @pods[ 1 .. $#pods ];
-            if ( scalar @pods gt 3 ) {
+            if ( scalar @pods gt 5 ) {
                 $response = $message->{who}
                   . ': your query has to many possible answers. Please refine your query and try again.';
             } else {
@@ -89,13 +89,13 @@ sub handleSaidCalculate {
 sub handleSaidInlineCalculate {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/calc(?:ulate)\[(.+?)\]/ );
+    return unless ( $message->{body} =~ m/calc(?:ulate)?\[(.+?)\]/ );
 
     if ( $1 =~ m/^[\-\+\^\/\*0-9]+$/ ) {
         my $answer = undef;
         my $input  = $1;
-        $input =~ s/\^/\*\*/;
-        eval '$answer = ' . $1;
+        $1 =~ s/\^/\*\*/;
+        eval {'$answer = ' . $1};
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
