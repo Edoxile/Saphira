@@ -63,7 +63,7 @@ sub handleEmotedThanks {
                 );
             } else {
                 $server->{bot}->reply( 'Thanks ' . $message->{who} . '! Let me return the favour!', $message );
-                $server->getChannel( $message->{channel} )->kick( $message->{who}, 'Bye bye!' );
+                $server->kick->kick( $message->{who}, $message->{channel}, 'Bye bye!' );
             }
             return;
         }
