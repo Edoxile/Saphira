@@ -46,9 +46,9 @@ sub handleSaidWikipedia {
 
     return unless ( $message->{body} =~ m/^!w(?:iki(?:pedia)?)? (.+)/ );
     my $input = $1;
-    my $lang  = 'nl'
+    my $lang  = 'nl';
 
-      if ( $input =~ m/^--lang=(\w{2}) (.+)/ ) {
+    if ( $input =~ m/^--lang=(\w{2}) (.+)/ ) {
         $lang = $1;
         $wiki->language($lang);
         $input = $2;

@@ -142,7 +142,7 @@ sub handleSaidBinary {
 sub handleSaidHex {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!hex(?:adecimal) (.+)/i );
+    return unless ( $message->{body} =~ m/!hex(?:adecimal)? (.+)/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . unpack( 'H*', $1 ), $message );
 }
