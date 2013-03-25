@@ -87,3 +87,5 @@ sub handleSaidWikipedia {
     
     $server->{bot}->reply( $response, $message );
 }
+
+1;
