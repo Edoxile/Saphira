@@ -63,7 +63,7 @@ sub handleSaidWikipedia {
             $raw =~ s/\{\{dpintro\}\}(.+?)\{\{dp\}\}/$1/gi;
             $raw =~ s/\[\[([^(\||\])]+|[^]]+)(?:.*?)\]\]/\[$1\]/gi;
             $raw =~ s/(==[\w\s]+==)/\* /;
-            $raw = $stripper->parse($raw);
+            $raw = $parser->parse($raw);
             $raw =~ tr/ / /s;
             $raw =~ s/ \./\./g;
             $raw =~ s/''/"/g;
@@ -75,7 +75,7 @@ sub handleSaidWikipedia {
             $response =~ s/\n//g;
             $response =~ s/\{\{.+?\}\}//g;
             $response =~ s/\[\[(.+?)\]\]/$1/g;
-            $response = $stripper->parse($response);
+            $response = $parser->parse($response);
             
             $response =~ tr/ / /s;
             $response =~ s/ \./\./g;
