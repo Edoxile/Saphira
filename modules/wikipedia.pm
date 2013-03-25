@@ -30,35 +30,38 @@ use WWW::Wikipedia;
 use HTML::Strip;
 
 our $parser = undef;
-our $wiki = undef;
+our $wiki   = undef;
 
 sub init {
     my ( $self, $message, $args ) = @_;
-    
-    $wiki = WWW::Wikipedia->new( language => 'en' );
+
+    $wiki = WWW::Wikipedia->new( language => 'nl' );
     $parser = HTML::Strip->new();
-    
+
     $self->registerHook( 'said', \&handleSaidWikipedia );
 }
 
 sub handleSaidWikipedia {
     my ( $wrapper, $server, $message ) = @_;
-    
+
     return unless ( $message->{body} =~ m/^!w(?:iki(?:pedia)?)? (.+)/ );
     my $input = $1;
-    
-    if ( $input =~ m/^--lang=(\w{2}) (.+)/ ) {
-        $wiki->language($1);
+    my $lang  = 'nl'
+
+      if ( $input =~ m/^--lang=(\w{2}) (.+)/ ) {
+        $lang = $1;
+        $wiki->language($lang);
+        $input = $2;
     }
-    
-    my $result = $wiki->search( $input );
+
+    print '>> Wikipedia query: [' . $input . '] using language: ' . $lang . "\n";
+
+    my $result   = $wiki->search($input);
     my $response = "Sorry $message->{who}, there is no article with titel '$input' on wikipedia.";
-    
+
     if ( defined $result ) {
         my $raw = $result->raw();
-        #print $raw . "\n\n\n";
-        if( $raw =~ m/^\{\{dpintro\}\}/) {
-            #verschillende entries!
+        if ( $raw =~ m/^\{\{dpintro\}\}/ ) {
             $raw =~ s/(\n|\r)//g;
             $raw =~ s/\{\{dpintro\}\}(.+?)\{\{dp\}\}/$1/gi;
             $raw =~ s/\[\[([^(\||\])]+|[^]]+)(?:.*?)\]\]/\[$1\]/gi;
@@ -67,24 +70,24 @@ sub handleSaidWikipedia {
             $raw =~ tr/ / /s;
             $raw =~ s/ \./\./g;
             $raw =~ s/''/"/g;
-            my @entries = split ( '\* ' , $raw );
-            @entries = grep(/\S/, @entries);
-            $response = join (", ", @entries);
+            my @entries = split( '\* ', $raw );
+            @entries = grep( /\S/, @entries );
+            $response = join( ", ", @entries );
         } else {
             $response = $result->text_basic();
             $response =~ s/\n//g;
             $response =~ s/\{\{.+?\}\}//g;
             $response =~ s/\[\[(.+?)\]\]/$1/g;
             $response = $parser->parse($response);
-            
+
             $response =~ tr/ / /s;
             $response =~ s/ \./\./g;
             $response =~ s/''/"/g;
         }
     }
-    
-    $wiki->language( 'en' );
-    
+
+    $wiki->language('nl') if $lang ne 'nl';
+
     $server->{bot}->reply( $response, $message );
 }
 

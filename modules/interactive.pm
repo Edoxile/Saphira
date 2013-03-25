@@ -34,10 +34,28 @@ sub init {
     $self->registerHook( 'emoted', \&handleEmotedThanks );
 }
 
+sub round { 
+    my $input = shift;
+    return int ($input + $input/abs($input*2));
+}
+
+sub handleSaidQuestion {
+    my ( $wrapper, $server, $message ) = @_;
+    
+    return unless ( $message->{addressed} && $message->{body} =~ m/!ask (.+?)\?$/ );
+    
+    my $question = $1;
+    
+    if ( $question =~ m/(,|or)/ ) {
+        my @choices = split ( m/(,|or)/, $question );
+        my $num = int ( ( ( scalar @choices ) + 1 ) * rand() );
+    }
+}
+
 sub handleSaidThanks {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/(thanks|thank you) Saphira/i );
+    return unless ( $message->{body} =~ m/(thanks|thank you),? Saphira/i );
 
     $server->{bot}->reply( "You're welcome, $message->{who}!", $message );
 }
@@ -45,14 +63,14 @@ sub handleSaidThanks {
 sub handleEmotedThanks {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/(greets|kicks|hits|spanks|thanks) Saphira/si );
+    return unless ( $message->{body} =~ m/(greets|kicks|hits|spanks|thanks|slaps) Saphira/si );
 
     my $reply = '';
 
     switch ($1) {
         case m/thanks/si        { $reply = 'No problem ' . $message->{who} . '!'; }
         case m/greets/si        { $reply = 'Hey there ' . $message->{who} . '!'; }
-        case m/(hits|spanks)/si { $reply = 'That\'s not nice ' . $message->{who} . '...'; }
+        case m/(hits|spanks|slaps)/si { $reply = 'That\'s not nice ' . $message->{who} . '...'; }
         case m/kicks/si {
             if ( $server->isChannelOperator( $message->{who}, $message->{channel} ) ) {
                 $server->{bot}->reply(
