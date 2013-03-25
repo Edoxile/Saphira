@@ -142,3 +142,5 @@ sub handleSaidBase64 {
 
     $server->{bot}->reply( $message->{who} . ': ' . encode_base64($1), $message );
 }
+
+1;
