@@ -34,6 +34,18 @@ sub init {
     my ( $self, $message, $args ) = @_;
 
     $self->registerHook( 'said', \&handleSaidMD5 );
+    $self->registerHook( 'said', \&handleSaidSHA1 );
+    $self->registerHook( 'said', \&handleSaidSHA224 );
+    $self->registerHook( 'said', \&handleSaidSHA256 );
+    $self->registerHook( 'said', \&handleSaidSHA384 );
+    $self->registerHook( 'said', \&handleSaidSHA512 );
+    $self->registerHook( 'said', \&handleSaidSHA512224 );
+    $self->registerHook( 'said', \&handleSaidSHA512256 );
+    $self->registerHook( 'said', \&handleSaidROT13 );
+    $self->registerHook( 'said', \&handleSaidReverse );
+    $self->registerHook( 'said', \&handleSaidBinary );
+    $self->registerHook( 'said', \&handleSaidHex );
+    $self->registerHook( 'said', \&handleSaidBase64 );
 }
 
 sub handleSaidMD5 {
