@@ -51,7 +51,7 @@ sub init {
 sub handleSaidMD5 {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!md5 (.+)$/i );
+    return unless ( $message->{body} =~ m/^!md5 (.+)$/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . md5_hex($1), $message );
 }
@@ -59,7 +59,7 @@ sub handleSaidMD5 {
 sub handleSaidSHA1 {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!sha1 (.+)$/i );
+    return unless ( $message->{body} =~ m/^!sha1 (.+)$/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . sha1_hex($1), $message );
 }
@@ -67,7 +67,7 @@ sub handleSaidSHA1 {
 sub handleSaidSHA224 {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!sha224 (.+)$/i );
+    return unless ( $message->{body} =~ m/^!sha224 (.+)$/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . sha224_hex($1), $message );
 }
@@ -75,7 +75,7 @@ sub handleSaidSHA224 {
 sub handleSaidSHA256 {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!sha256 (.+)$/i );
+    return unless ( $message->{body} =~ m/^!sha256 (.+)$/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . sha256_hex($1), $message );
 }
@@ -83,7 +83,7 @@ sub handleSaidSHA256 {
 sub handleSaidSHA384 {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!sha384 (.+)$/i );
+    return unless ( $message->{body} =~ m/^!sha384 (.+)$/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . sha384_hex($1), $message );
 }
@@ -91,7 +91,7 @@ sub handleSaidSHA384 {
 sub handleSaidSHA512 {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!sha512 (.+)$/i );
+    return unless ( $message->{body} =~ m/^!sha512 (.+)$/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . sha512_hex($1), $message );
 }
@@ -99,7 +99,7 @@ sub handleSaidSHA512 {
 sub handleSaidSHA512224 {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!sha512224 (.+)$/i );
+    return unless ( $message->{body} =~ m/^!sha512224 (.+)$/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . sha512224_hex($1), $message );
 }
@@ -107,7 +107,7 @@ sub handleSaidSHA512224 {
 sub handleSaidSHA512256 {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!sha512256 (.+)$/i );
+    return unless ( $message->{body} =~ m/^!sha512256 (.+)$/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . sha512256_hex($1), $message );
 }
@@ -115,7 +115,7 @@ sub handleSaidSHA512256 {
 sub handleSaidROT13 {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!rot13 (.+)/i );
+    return unless ( $message->{body} =~ m/^!rot13 (.+)$/i );
 
     my $input = $1;
     $input =~ tr/A-Za-z/N-ZA-Mn-za-m/;
@@ -126,7 +126,7 @@ sub handleSaidROT13 {
 sub handleSaidReverse {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!reverse (.+)/i );
+    return unless ( $message->{body} =~ m/^!reverse (.+)$/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . reverse($1), $message );
 }
@@ -134,33 +134,42 @@ sub handleSaidReverse {
 sub handleSaidBinary {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!binary (.+)/i );
-    
+    return unless ( $message->{body} =~ m/^!binary (.+)$/i );
+
     my $input = $1;
     if ( $input =~ m/^\d+$/ ) {
         $input = int($input);
+        $input = unpack( "B32", pack( "N", int($input) ) );
+        $input =~ s/^0+(?=\d)//;
+        return $str;
+
+    } else {
+        $input = unpack( 'B*', $input );
     }
 
-    $server->{bot}->reply( $message->{who} . ': ' . unpack( 'B*', $input ), $message );
+    $server->{bot}->reply( $message->{who} . ': ' . $input, $message );
 }
 
 sub handleSaidHex {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!hex(?:adecimal)? (.+)/i );
-    
+    return unless ( $message->{body} =~ m/^!hex(?:adecimal)? (.+)$/i );
+
     my $input = $1;
     if ( $input =~ m/^\d+$/ ) {
         $input = int($input);
+        $input = sprintf( '%X', $input );
+    } else {
+        $input = unpack( 'H*', $input );
     }
 
-    $server->{bot}->reply( $message->{who} . ': ' . unpack( 'H*', $input ), $message );
+    $server->{bot}->reply( $message->{who} . ': ' . $input, $message );
 }
 
 sub handleSaidBase64 {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/!base64 (.+)/i );
+    return unless ( $message->{body} =~ m/^!base64 (.+)$/i );
 
     $server->{bot}->reply( $message->{who} . ': ' . encode_base64($1), $message );
 }
