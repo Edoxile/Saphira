@@ -976,6 +976,7 @@ sub processHooks {
         foreach ( @{ $moduleHash->{hooks}->{$type} } ) {
             eval { $self->$_( $server, $data ); };
             if ($@) {
+                print "[E] Module '$module' encountered an error and will be unloaded:\n\t$@\n";
                 $server->{bot}->notice(
                     who     => $data->{who},
                     channel => $data->{channel},

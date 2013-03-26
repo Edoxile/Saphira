@@ -135,16 +135,26 @@ sub handleSaidBinary {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/!binary (.+)/i );
+    
+    my $input = $1;
+    if ( $input =~ m/^\d+$/ ) {
+        $input = int($input);
+    }
 
-    $server->{bot}->reply( $message->{who} . ': ' . unpack( 'B*', $1 ), $message );
+    $server->{bot}->reply( $message->{who} . ': ' . unpack( 'B*', $input ), $message );
 }
 
 sub handleSaidHex {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/!hex(?:adecimal)? (.+)/i );
+    
+    my $input = $1;
+    if ( $input =~ m/^\d+$/ ) {
+        $input = int($input);
+    }
 
-    $server->{bot}->reply( $message->{who} . ': ' . unpack( 'H*', $1 ), $message );
+    $server->{bot}->reply( $message->{who} . ': ' . unpack( 'H*', $input ), $message );
 }
 
 sub handleSaidBase64 {
