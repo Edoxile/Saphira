@@ -141,8 +141,6 @@ sub handleSaidBinary {
         $input = int($input);
         $input = unpack( "B32", pack( "N", int($input) ) );
         $input =~ s/^0+(?=\d)//;
-        return $str;
-
     } else {
         $input = unpack( 'B*', $input );
     }
