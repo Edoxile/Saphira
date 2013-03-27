@@ -47,7 +47,7 @@ sub handleSaidWikipedia {
     my $page = $1;
     my $lang  = 'nl';
 
-    if ( $input =~ m/^--lang=(\w{2}) (.+)/ ) {
+    if ( $page =~ m/^--lang=(\w{2}) (.+)/ ) {
         $lang = $1;
         $page = $2;
     }
