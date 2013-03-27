@@ -93,14 +93,16 @@ sub new {
 sub said {
     my $data = $_[1];
     if ( $data->{body} =~ m/^\* ([\w\d_]+) (.+?)$/ ) {
-        $data->{who}  = $1;
+        $data->{real_who}  = $1;
         $data->{body} = $2;
         $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $data );
         return;
     }
     if ( $data->{body} =~ m/^<([\w\d_]+)> (.+?)$/ ) {
-        $data->{who}  = $1;
-        $data->{body} = $2;
+        $data->{real_who} = $1;
+        $data->{body}     = $2;
+    } else {
+        $data->{real_who} = $data->{who};
     }
     $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'said', $data );
     return;
