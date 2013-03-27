@@ -39,12 +39,12 @@ sub init {
 sub handleSaidAsk {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $message->{body} =~ m/!ask (.+?)\?$/ );
+    return unless ( $message->{body} =~ m/^!ask (.+?)\?$/ );
     
     my $question = $1;
     my $reply = '';
     
-    if ( $question =~ m/,|or/ ) {
+    if ( $question =~ m/,| or / ) {
         my @choices = split ( m/, | or /, $question );
         @choices = grep( /\S/, @choices );
         @choices = shuffle(@choices);
