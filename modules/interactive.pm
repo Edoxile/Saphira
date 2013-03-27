@@ -31,6 +31,7 @@ sub init {
     my ( $self, $message, $args ) = @_;
 
     $self->registerHook( 'said',   \&handleSaidThanks );
+    $self->registerHook( 'said',   \&handleSaidAsk );
     $self->registerHook( 'emoted', \&handleEmotedThanks );
 }
 
@@ -39,7 +40,7 @@ sub round {
     return int ($input + $input/abs($input*2));
 }
 
-sub handleSaidQuestion {
+sub handleSaidAsk {
     my ( $wrapper, $server, $message ) = @_;
     
     return unless ( $message->{addressed} && $message->{body} =~ m/!ask (.+?)\?$/ );
