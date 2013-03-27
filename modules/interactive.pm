@@ -48,8 +48,8 @@ sub handleSaidAsk {
     my $question = $1;
     my $reply = '';
     
-    if ( $question =~ m/(,|or)/ ) {
-        my @choices = split ( m/(,|or)/, $question );
+    if ( $question =~ m// ) {
+        my @choices = split ( m/,|or/, $question );
         @choices = grep( /\S/, @choices );
         @choices = map { ($_ =~ m/should (?:i|you|he|she|we) (.+?)/i) ? $1 : $_ } @choices;
         my $num = round( ( scalar @choices ) * rand() );
