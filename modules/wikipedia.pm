@@ -56,7 +56,7 @@ sub handleSaidWikipedia {
 
     my $url =
       'http://' . $lang . '.wikipedia.org/w/api.php?format=json&action=query&prop=revisions&rvprop=content&titles=';
-    my $reply = "I'm sorry $message->{who}, but I can't find anything for '$input' on Wikipedia...";
+    my $reply = "I'm sorry $message->{who}, but I can't find anything for '$page' on Wikipedia...";
 
     my $raw_data = get( $url . $page );
     my $data     = $parser->decode($raw_data);
