@@ -641,6 +641,14 @@ sub isChannelOperator {
       || $state->is_channel_halfop( $chan, $user );
 }
 
+sub kick {
+    my $self = shift;
+    my $channel = shift;
+    my $user = shift;
+    my $reason = shift || 'Bye bye!';
+    $self->{server}->kick($user,$channel,$reason);
+}
+
 sub _getServerId {
     my $self = shift;
     return $self->{id};
