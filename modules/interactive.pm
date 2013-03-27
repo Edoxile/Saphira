@@ -43,7 +43,7 @@ sub round {
 sub handleSaidAsk {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $message->{addressed} && $message->{body} =~ m/!ask (.+?)\?$/ );
+    return unless ( $message->{body} =~ m/!ask (.+?)\?$/ );
     
     my $question = $1;
     my $reply = '';
@@ -51,7 +51,7 @@ sub handleSaidAsk {
     if ( $question =~ m/(,|or)/ ) {
         my @choices = split ( m/(,|or)/, $question );
         @choices = grep( /\S/, @choices );
-        @choices = map { ($_ =~ m/shoud (?:i|you|he|she|we) (.+?)/i) ? $1 : $_ } @choices;
+        @choices = map { ($_ =~ m/should (?:i|you|he|she|we) (.+?)/i) ? $1 : $_ } @choices;
         my $num = round( ( scalar @choices ) * rand() );
         $reply = $message->{who} . ': ' . $choices[$num] . '.';
     } else {
