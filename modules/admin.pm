@@ -48,7 +48,7 @@ sub handleSaidKick {
     return unless ( $message->{body} =~ m/^!kick\s(.+?)(?:\s(.+?))?$/ );
     return unless ( getAuthLevel($server, $message) gt 5 );
     
-    my $reason = ( defined $2 ? $2 : "Apperantly you're not wanted here..." );
+    my $reason = ( defined $2 ? $2 : "Apparently you're not wanted here..." );
     
     $server->kick( $1, $message->{channel} );
 }
