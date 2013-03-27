@@ -110,7 +110,9 @@ sub said {
 }
 
 sub emoted {
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $_[1] );
+    my $data = $_[1];
+    $data->{real_who} = $data->{who};
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $data );
     return;
 }
 
