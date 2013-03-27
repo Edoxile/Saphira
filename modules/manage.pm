@@ -403,7 +403,7 @@ sub handleSaidCmd {
 sub handleKicked {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{kicked} eq $server->nick() );
+    return unless ( $message->{kicked} eq $server->{bot}->nick );
 
     my $chan = $server->getChannel( $message->{channel} );
 
