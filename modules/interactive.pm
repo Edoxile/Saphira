@@ -45,7 +45,7 @@ sub handleSaidQuestion {
     return unless ( $message->{addressed} && $message->{body} =~ m/!ask (.+?)\?$/ );
     
     my $question = $1;
-    my $reply = ''
+    my $reply = '';
     
     if ( $question =~ m/(,|or)/ ) {
         my @choices = split ( m/(,|or)/, $question );
@@ -56,6 +56,8 @@ sub handleSaidQuestion {
     } else {
         $reply = $message->{who} . ': ' . (round(rand()) eq 1 ? 'yes' : 'no') . '.';
     }
+
+    $server->{bot}->reply( $reply, $message );
 }
 
 sub handleSaidThanks {
