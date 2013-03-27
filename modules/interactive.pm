@@ -36,6 +36,11 @@ sub init {
     $self->registerHook( 'emoted', \&handleEmotedThanks );
 }
 
+sub round {
+    my $input = shift;
+    return int ($input + 0.5);
+}
+
 sub handleSaidAsk {
     my ( $wrapper, $server, $message ) = @_;
     
