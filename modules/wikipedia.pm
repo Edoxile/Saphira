@@ -88,8 +88,12 @@ sub handleSaidWikipedia {
             $wikidata =~ s/'''(.+?)'''/\x02$1\x0F/g;
             $wikidata =~ s/''/"/g;
         }
+        $wikidata = ( ( length($wikidata) > 296 ) ? ( substr( $wikidata, 0, 293 ) . '...' ) : $wikidata );
+        $url      = $data->{query}->{pages}->{ $pageID[0] }->{title};
+        $url      = s/\s/_/g;
+        $reply = $message->{who} . ": Wikipedia entry for '$input' (http://$lang.wikipedia.org/wiki/$url): $wikidata";
     }
-    $server->{bot}->reply( $message->{who} . ': ' . $wikidata, $message );
+    $server->{bot}->reply( $reply, $message );
 }
 
 1;
