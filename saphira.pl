@@ -92,6 +92,7 @@ sub new {
 
 sub said {
     my $data = $_[1];
+    $data->{body} =~ s/\cC\d{1,2}(?:,\d{1,2})?|[\cC\cB\cI\cU\cR\cO]//g;
     if ( $data->{body} =~ m/^\* ([\w\d_]+) (.+?)$/ ) {
         $data->{real_who}  = $1;
         $data->{body} = $2;
