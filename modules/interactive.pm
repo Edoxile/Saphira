@@ -26,6 +26,7 @@ use warnings;
 no warnings 'redefine';
 use strict;
 use Switch;
+use List::Util 'shuffle';
 
 sub init {
     my ( $self, $message, $args ) = @_;
@@ -33,11 +34,6 @@ sub init {
     $self->registerHook( 'said',   \&handleSaidThanks );
     $self->registerHook( 'said',   \&handleSaidAsk );
     $self->registerHook( 'emoted', \&handleEmotedThanks );
-}
-
-sub round { 
-    my $input = shift;
-    return int ($input + $input/abs($input*2));
 }
 
 sub handleSaidAsk {
@@ -51,9 +47,8 @@ sub handleSaidAsk {
     if ( $question =~ m/,|or/ ) {
         my @choices = split ( m/,|or/, $question );
         @choices = grep( /\S/, @choices );
-        @choices = map { ($_ =~ m/should (?:i|you|he|she|we) (.+?)/i) ? $1 : $_ } @choices;
-        my $num = round( ( scalar @choices ) * rand() );
-        $reply = $message->{who} . ': ' . $choices[$num] . '.';
+        @choices = shuffle(@choices);
+        $reply = $message->{who} . ': ' . $choices[0] . '.';
     } else {
         $reply = $message->{who} . ': ' . (round(rand()) eq 1 ? 'yes' : 'no') . '.';
     }
