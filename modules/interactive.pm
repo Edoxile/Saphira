@@ -45,10 +45,16 @@ sub handleSaidQuestion {
     return unless ( $message->{addressed} && $message->{body} =~ m/!ask (.+?)\?$/ );
     
     my $question = $1;
+    my $reply = ''
     
     if ( $question =~ m/(,|or)/ ) {
         my @choices = split ( m/(,|or)/, $question );
-        my $num = int ( ( ( scalar @choices ) + 1 ) * rand() );
+        @choices = grep( /\S/, @choices );
+        @choices = map { ($_ =~ m/shoud (?:i|you|he|she|we) (.+?)/i) ? $1 : $_ } @choices;
+        my $num = round( ( scalar @choices ) * rand() );
+        $reply = $message->{who} . ': ' . $choices[$num] . '.';
+    } else {
+        $reply = $message->{who} . ': ' . (round(rand()) eq 1 ? 'yes' : 'no') . '.';
     }
 }
 

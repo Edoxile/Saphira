@@ -26,8 +26,8 @@ use warnings;
 no warnings 'redefine';
 use strict;
 
-use WWW::Wikipedia;
-use HTML::Strip;
+use LWP::Simple;
+use JSON::XS;
 
 our $parser = undef;
 our $wiki   = undef;
@@ -35,8 +35,7 @@ our $wiki   = undef;
 sub init {
     my ( $self, $message, $args ) = @_;
 
-    $wiki = WWW::Wikipedia->new( language => 'nl' );
-    $parser = HTML::Strip->new();
+    $parser = JSON::XS->new->ascii->pretty->allow_nonref;
 
     $self->registerHook( 'said', \&handleSaidWikipedia );
 }
@@ -50,45 +49,47 @@ sub handleSaidWikipedia {
 
     if ( $input =~ m/^--lang=(\w{2}) (.+)/ ) {
         $lang = $1;
-        $wiki->language($lang);
-        $input = $2;
+        $page = $2;
     }
 
     print '>> Wikipedia query: [' . $input . '] using language: ' . $lang . "\n";
 
-    my $result   = $wiki->search($input);
-    my $response = "Sorry $message->{who}, there is no article with titel '$input' on wikipedia.";
+    my $url =
+      'http://' . $lang . '.wikipedia.org/w/api.php?format=json&action=query&prop=revisions&rvprop=content&titles=';
+    my $reply = "I'm sorry $message->{who}, but I can't find anything for '$input' on Wikipedia...";
 
-    if ( defined $result ) {
-        my $raw = $result->raw();
-        if ( $raw =~ m/^\{\{dpintro\}\}/ ) {
-            $raw =~ s/(\n|\r)//g;
-            $raw =~ s/\{\{dpintro\}\}(.+?)\{\{dp\}\}/$1/gi;
-            $raw =~ s/\[\[([^(\||\])]+|[^]]+)(?:.*?)\]\]/\[$1\]/gi;
-            $raw =~ s/(==[\w\s]+==)/\* /;
-            $raw = $parser->parse($raw);
-            $raw =~ tr/ / /s;
-            $raw =~ s/ \./\./g;
-            $raw =~ s/''/"/g;
-            my @entries = split( '\* ', $raw );
-            @entries = grep( /\S/, @entries );
-            $response = join( ", ", @entries );
+    my $raw_data = get( $url . $page );
+    my $data     = $parser->decode($raw_data);
+    my @pageID   = keys( $data->{query}->{pages} );
+
+    if ( int( $pageID[0] ) gt 0 ) {
+        my $revision = shift $data->{query}->{pages}->{ $pageID[0] }->{revisions};
+        if ( $revision->{'*'} =~ m/^#REDIRECT \[\[(.+?)\]\]/ ) {
+            $page     = $1;
+            $raw_data = get( $url . $page );
+            $data     = $parser->decode($raw_data);
+            @pageID   = keys( $data->{query}->{pages} );
+            $revision = shift $data->{query}->{pages}->{ $pageID[0] }->{revisions};
+        }
+        my $wikidata = $revision->{'*'};
+        $wikidata =~ s/\{\{.+?\}\}//gs;
+        if ( $wikidata =~ m/'''$data->{query}->{pages}->{$pageID[0]}->{title}''' may refer to:\n\n(.+?)$/s ) {
+            $wikidata = $1;
+            $wikidata =~ s/==.+?==\n//gs;
+            $wikidata =~ s/\n+/\n/gs;
+            $wikidata =~ s/\[\[([^\|\]]+)(?:|(.+?))?\]\]/\[$1\]/g;
+            $wikidata =~ s/^\*//gm;
+            $wikidata =~ s/(\S)\n(\S)/$1; $2/g;
+            $wikidata = $page . ' may refer to: ' . $wikidata;
         } else {
-            $response = $result->text_basic();
-            $response =~ s/\n//g;
-            $response =~ s/\{\{.+?\}\}//g;
-            $response =~ s/\[\[(.+?)\]\]/$1/g;
-            $response = $parser->parse($response);
-
-            $response =~ tr/ / /s;
-            $response =~ s/ \./\./g;
-            $response =~ s/''/"/g;
+            $wikidata =~ s/^\s+(.+?)\n\n.+$/$1/gs;
+            $wikidata =~ s/<ref(.+?)\/ref>//gi;
+            $wikidata =~ s/\[\[([^\|\]]+)(?:|(.+?))?\]\]/$1/g;
+            $wikidata =~ s/'''(.+?)'''/\x02$1\x0F/g;
+            $wikidata =~ s/''/"/g;
         }
     }
-
-    $wiki->language('nl') if $lang ne 'nl';
-
-    $server->{bot}->reply( $response, $message );
+    $server->{bot}->reply( $message->{who} . ': ' . $wikidata, $message );
 }
 
 1;
