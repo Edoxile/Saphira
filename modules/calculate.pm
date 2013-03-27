@@ -51,7 +51,6 @@ sub handleSaidCalculate {
     if ( $1 =~ m/^[\-\+\^\/\*0-9\s\(\)]+$/ ) {
         $input =~ s/\^/\*\*/;
         my $answer = eval($input);
-        print '[D] ' . $answer . "\n";
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {

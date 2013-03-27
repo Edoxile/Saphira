@@ -92,11 +92,17 @@ sub new {
 
 sub said {
     my $data = $_[1];
-    if ( $_[1]->{body} =~ m/^<([a-zA-Z0-9_]+)> (.+?)$/) {
-        $_[1]->{who}  = $1;
-        $_[1]->{body} = $2;
+    if ( $data->{body} =~ m/^\* ([\w\d_]+) (.+?)$/ ) {
+        $data->{who}  = $1;
+        $data->{body} = $2;
+        $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $_[1] );
+        return;
     }
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'said', $_[1] );
+    if ( $data->{body} =~ m/^<([\w\d_]+)> (.+?)$/ ) {
+        $data->{who}  = $1;
+        $data->{body} = $2;
+    }
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'said', $data );
     return;
 }
 
