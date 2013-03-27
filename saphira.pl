@@ -646,7 +646,7 @@ sub kick {
     my $channel = shift;
     my $user = shift;
     my $reason = shift || 'Bye bye!';
-    $self->{server}->kick($user,$channel,$reason);
+    $self->{bot}->kick($user,$channel,$reason);
 }
 
 sub _getServerId {
