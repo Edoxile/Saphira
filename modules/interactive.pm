@@ -82,7 +82,7 @@ sub handleEmotedThanks {
         case m/(hits|spanks|slaps)/si { $reply = 'That\'s not nice ' . $message->{real_who} . '...'; }
         case m/kicks/si {
             if ( $message->{real_who} ne $message->{who} ) {
-                $server->{bot}->reply( 'Kicking me from inside your game, ' . $message->{who} . '? Don\'t be a wuss and try that again in IRC!', $message );
+                $server->{bot}->reply( 'Kicking me from inside your game, ' . $message->{real_who} . '? Don\'t be a wuss and try that again in IRC!', $message );
                 return;
             }
             if ( $server->isChannelOperator( $message->{who}, $message->{channel} ) ) {
