@@ -77,7 +77,7 @@ sub handleSaidWikipedia {
             $wikidata = $1;
             $wikidata =~ s/==.+?==\n//gs;
             $wikidata =~ s/\n+/\n/gs;
-            $wikidata =~ s/\[\[([^\|\]]+)(?:|(.+?))?\]\]/\[$1\]/g;
+            $wikidata =~ s/\[\[([^\|\]#]+)(?:.*?)\]\]/\[$1\]/g;
             $wikidata =~ s/^\*//gm;
             $wikidata =~ s/(\S)\n(\S)/$1; $2/g;
             $wikidata = $page . ' may refer to: ' . $wikidata;
@@ -88,10 +88,10 @@ sub handleSaidWikipedia {
             $wikidata =~ s/'''(.+?)'''/\x02$1\x0F/g;
             $wikidata =~ s/''/"/g;
         }
-        $wikidata = ( ( length($wikidata) > 296 ) ? ( substr( $wikidata, 0, 293 ) . '...' ) : $wikidata );
-        $url      = $data->{query}->{pages}->{ $pageID[0] }->{title};
-        $url      = s/\s/_/g;
-        $reply = $message->{who} . ": Wikipedia entry for '$page' (http://$lang.wikipedia.org/wiki/$url): $wikidata";
+        #$wikidata = ( ( length($wikidata) > 296 ) ? ( substr( $wikidata, 0, 293 ) . '...' ) : $wikidata );
+        my $wikiurl      = $data->{query}->{pages}->{ $pageID[0] }->{title};
+        $wikiurl         = s/\s/_/g;
+        $reply           = $message->{who} . ": Wikipedia entry for '$page' (http://$lang.wikipedia.org/wiki/$wikiurl):\n$wikidata";
     }
     $server->{bot}->reply( $reply, $message );
 }
