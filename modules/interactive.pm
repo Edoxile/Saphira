@@ -94,7 +94,7 @@ sub handleEmotedThanks {
                 );
             } else {
                 $server->{bot}->reply( 'Thanks ' . $message->{who} . '! Let me return the favour!', $message );
-                $server->kick->kick( $message->{who}, $message->{channel}, 'Bye bye!' );
+                $server->kick( $message->{channel}, $message->{who}, 'Bye bye!' );
             }
             return;
         }
