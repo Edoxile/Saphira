@@ -44,7 +44,7 @@ sub handleSaidWikipedia {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/^!w(?:iki(?:pedia)?)? (.+)/ );
-    my $input = $1;
+    my $page = $1;
     my $lang  = 'nl';
 
     if ( $input =~ m/^--lang=(\w{2}) (.+)/ ) {
