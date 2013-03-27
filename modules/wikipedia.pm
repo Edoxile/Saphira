@@ -52,7 +52,7 @@ sub handleSaidWikipedia {
         $page = $2;
     }
 
-    print '>> Wikipedia query: [' . $input . '] using language: ' . $lang . "\n";
+    print '>> Wikipedia query: [' . $page . '] using language: ' . $lang . "\n";
 
     my $url =
       'http://' . $lang . '.wikipedia.org/w/api.php?format=json&action=query&prop=revisions&rvprop=content&titles=';
@@ -91,7 +91,7 @@ sub handleSaidWikipedia {
         $wikidata = ( ( length($wikidata) > 296 ) ? ( substr( $wikidata, 0, 293 ) . '...' ) : $wikidata );
         $url      = $data->{query}->{pages}->{ $pageID[0] }->{title};
         $url      = s/\s/_/g;
-        $reply = $message->{who} . ": Wikipedia entry for '$input' (http://$lang.wikipedia.org/wiki/$url): $wikidata";
+        $reply = $message->{who} . ": Wikipedia entry for '$page' (http://$lang.wikipedia.org/wiki/$url): $wikidata";
     }
     $server->{bot}->reply( $reply, $message );
 }
