@@ -45,7 +45,7 @@ sub handleSaidAsk {
     my $reply = '';
     
     if ( $question =~ m/,|or/ ) {
-        my @choices = split ( m/,|or/, $question );
+        my @choices = split ( m/, | or /, $question );
         @choices = grep( /\S/, @choices );
         @choices = shuffle(@choices);
         $reply = $message->{who} . ': ' . $choices[0] . '.';
