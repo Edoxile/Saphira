@@ -95,7 +95,7 @@ sub said {
     if ( $data->{body} =~ m/^\* ([\w\d_]+) (.+?)$/ ) {
         $data->{who}  = $1;
         $data->{body} = $2;
-        $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $_[1] );
+        $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $data );
         return;
     }
     if ( $data->{body} =~ m/^<([\w\d_]+)> (.+?)$/ ) {
