@@ -45,9 +45,12 @@ sub getAuthLevel {
 sub handleSaidKick {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/^!kick\s(.+?)(?:\s(.+?))$/ );
+    return unless ( $message->{body} =~ m/^!kick\s(.+?)(?:\s(.+?))?$/ );
+    return unless ( getAuthLevel($server, $message) gt 5 );
     
-    $server->getChannel( $message->{channel} )->kick( $1, $2 );
+    my $channel = ( defined $2 ? $2 : $message->{channel} );
+    
+    $server->getChannel( $message->{channel} )->kick( $1, $channel );
 }
 
 1;

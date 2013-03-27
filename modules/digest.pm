@@ -53,7 +53,7 @@ sub handleSaidMD5 {
 
     return unless ( $message->{body} =~ m/^!md5 (.+)$/i );
 
-    $server->{bot}->reply( $message->{who} . ': ' . md5_hex($1), $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . md5_hex($1), $message );
 }
 
 sub handleSaidSHA1 {
@@ -61,7 +61,7 @@ sub handleSaidSHA1 {
 
     return unless ( $message->{body} =~ m/^!sha1 (.+)$/i );
 
-    $server->{bot}->reply( $message->{who} . ': ' . sha1_hex($1), $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . sha1_hex($1), $message );
 }
 
 sub handleSaidSHA224 {
@@ -69,7 +69,7 @@ sub handleSaidSHA224 {
 
     return unless ( $message->{body} =~ m/^!sha224 (.+)$/i );
 
-    $server->{bot}->reply( $message->{who} . ': ' . sha224_hex($1), $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . sha224_hex($1), $message );
 }
 
 sub handleSaidSHA256 {
@@ -77,7 +77,7 @@ sub handleSaidSHA256 {
 
     return unless ( $message->{body} =~ m/^!sha256 (.+)$/i );
 
-    $server->{bot}->reply( $message->{who} . ': ' . sha256_hex($1), $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . sha256_hex($1), $message );
 }
 
 sub handleSaidSHA384 {
@@ -85,7 +85,7 @@ sub handleSaidSHA384 {
 
     return unless ( $message->{body} =~ m/^!sha384 (.+)$/i );
 
-    $server->{bot}->reply( $message->{who} . ': ' . sha384_hex($1), $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . sha384_hex($1), $message );
 }
 
 sub handleSaidSHA512 {
@@ -93,7 +93,7 @@ sub handleSaidSHA512 {
 
     return unless ( $message->{body} =~ m/^!sha512 (.+)$/i );
 
-    $server->{bot}->reply( $message->{who} . ': ' . sha512_hex($1), $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . sha512_hex($1), $message );
 }
 
 sub handleSaidSHA512224 {
@@ -101,7 +101,7 @@ sub handleSaidSHA512224 {
 
     return unless ( $message->{body} =~ m/^!sha512224 (.+)$/i );
 
-    $server->{bot}->reply( $message->{who} . ': ' . sha512224_hex($1), $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . sha512224_hex($1), $message );
 }
 
 sub handleSaidSHA512256 {
@@ -109,7 +109,7 @@ sub handleSaidSHA512256 {
 
     return unless ( $message->{body} =~ m/^!sha512256 (.+)$/i );
 
-    $server->{bot}->reply( $message->{who} . ': ' . sha512256_hex($1), $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . sha512256_hex($1), $message );
 }
 
 sub handleSaidROT13 {
@@ -120,7 +120,7 @@ sub handleSaidROT13 {
     my $input = $1;
     $input =~ tr/A-Za-z/N-ZA-Mn-za-m/;
 
-    $server->{bot}->reply( "$message->{who}: $input", $message );
+    $server->{bot}->reply( "$message->{real_who}: $input", $message );
 }
 
 sub handleSaidReverse {
@@ -128,7 +128,7 @@ sub handleSaidReverse {
 
     return unless ( $message->{body} =~ m/^!reverse (.+)$/i );
 
-    $server->{bot}->reply( $message->{who} . ': ' . reverse($1), $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . reverse($1), $message );
 }
 
 sub handleSaidBinary {
@@ -145,7 +145,7 @@ sub handleSaidBinary {
         $input = unpack( 'B*', $input );
     }
 
-    $server->{bot}->reply( $message->{who} . ': ' . $input, $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . $input, $message );
 }
 
 sub handleSaidHex {
@@ -161,7 +161,7 @@ sub handleSaidHex {
         $input = unpack( 'H*', $input );
     }
 
-    $server->{bot}->reply( $message->{who} . ': ' . $input, $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . $input, $message );
 }
 
 sub handleSaidBase64 {
@@ -169,7 +169,7 @@ sub handleSaidBase64 {
 
     return unless ( $message->{body} =~ m/^!base64 (.+)$/i );
 
-    $server->{bot}->reply( $message->{who} . ': ' . encode_base64($1), $message );
+    $server->{bot}->reply( $message->{real_who} . ': ' . encode_base64($1), $message );
 }
 
 1;

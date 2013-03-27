@@ -50,11 +50,11 @@ sub handleWebSearch {
 
     if ( !defined($result) ) {
         $server->{bot}
-          ->reply( 'I\'m Sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . '\' on Google.',
+          ->reply( 'I\'m Sorry ' . $message->{real_who} . ', I can\'t find anything for \'' . $1 . '\' on Google.',
             $message );
     } else {
         my $reply =
-            $message->{who} . ': '
+            $message->{real_who} . ': '
           . decodeTitle( HTML::Entities::decode( $result->titleNoFormatting ) ) . ' - '
           . $result->uri;
         $server->{bot}->reply( $reply, $message );
@@ -73,11 +73,11 @@ sub handleYoutubeSearch {
 
     if ( !defined($result) ) {
         $server->{bot}
-          ->reply( 'I\'m Sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . '\' on Youtube.',
+          ->reply( 'I\'m Sorry ' . $message->{real_who} . ', I can\'t find anything for \'' . $1 . '\' on Youtube.',
             $message );
     } else {
         my $reply =
-            $message->{who} . ': '
+            $message->{real_who} . ': '
           . decodeTitle( HTML::Entities::decode( $result->titleNoFormatting ) ) . ' - '
           . $result->uri;
         $server->{bot}->reply( $reply, $message );
@@ -96,10 +96,10 @@ sub handleImageSearch {
 
     if ( !defined($result) ) {
         $server->{bot}
-          ->reply( 'I\'m Sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . '\' on Google Images.',
+          ->reply( 'I\'m Sorry ' . $message->{real_who} . ', I can\'t find anything for \'' . $1 . '\' on Google Images.',
             $message );
     } else {
-        my $reply = $message->{who} . ': ' . $result->uri;
+        my $reply = $message->{real_who} . ': ' . $result->uri;
         $server->{bot}->reply( $reply, $message );
     }
 }

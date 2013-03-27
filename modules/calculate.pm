@@ -54,7 +54,7 @@ sub handleSaidCalculate {
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
-            $server->{bot}->reply( "$message->{who}: $input = $answer", $message );
+            $server->{bot}->reply( "$message->{real_who}: $input = $answer", $message );
         }
     } else {
         print '>> WolframAlpha query: [ ' . $1 . " ]\n";
@@ -66,7 +66,7 @@ sub handleSaidCalculate {
             my @pods = @{ $query->pods };
             @pods = @pods[ 1 .. $#pods ];
             if ( scalar @pods gt 5 ) {
-                $response = $message->{who}
+                $response = $message->{real_who}
                   . ': your query has to many possible answers. Please refine your query and try again.';
             } else {
                 foreach my $pod ( @{ $query->pods } ) {
@@ -74,11 +74,11 @@ sub handleSaidCalculate {
                         push( @responses, $subPod->plaintext ) if defined $subPod->plaintext;
                     }
                 }
-                $response = $message->{who} . ', WolframAlpha returned: ' . join( ' and ', @responses );
+                $response = $message->{real_who} . ', WolframAlpha returned: ' . join( ' and ', @responses );
             }
         } else {
             $response =
-              'I\'m sorry ' . $message->{who} . ', I can\'t find anything for \'' . $1 . "' on WolframAlpha.\n";
+              'I\'m sorry ' . $message->{real_who} . ', I can\'t find anything for \'' . $1 . "' on WolframAlpha.\n";
         }
         $server->{bot}->reply( $response, $message );
     }
@@ -96,7 +96,7 @@ sub handleSaidInlineCalculate {
         if ($@) {
             $server->{bot}->reply( "\x02Error:\x0F $@", $message );
         } else {
-            $server->{bot}->reply( "$message->{who}: $input = $answer", $message );
+            $server->{bot}->reply( "$message->{real_who}: $input = $answer", $message );
         }
     } else {
         $server->{bot}

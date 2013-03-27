@@ -48,9 +48,9 @@ sub handleSaidAsk {
         my @choices = split ( m/, | or /, $question );
         @choices = grep( /\S/, @choices );
         @choices = shuffle(@choices);
-        $reply = $message->{who} . ': ' . $choices[0] . '.';
+        $reply = $message->{real_who} . ': ' . $choices[0] . '.';
     } else {
-        $reply = $message->{who} . ': ' . (round(rand()) eq 1 ? 'yes' : 'no') . '.';
+        $reply = $message->{real_who} . ': ' . (round(rand()) eq 1 ? 'yes' : 'no') . '.';
     }
 
     $server->{bot}->reply( $reply, $message );
@@ -61,7 +61,7 @@ sub handleSaidThanks {
 
     return unless ( $message->{body} =~ m/(thanks|thank you),? Saphira/i );
 
-    $server->{bot}->reply( "You're welcome, $message->{who}!", $message );
+    $server->{bot}->reply( "You're welcome, $message->{real_who}!", $message );
 }
 
 sub handleEmotedThanks {
@@ -72,10 +72,14 @@ sub handleEmotedThanks {
     my $reply = '';
 
     switch ($1) {
-        case m/thanks/si        { $reply = 'No problem ' . $message->{who} . '!'; }
-        case m/greets/si        { $reply = 'Hey there ' . $message->{who} . '!'; }
-        case m/(hits|spanks|slaps)/si { $reply = 'That\'s not nice ' . $message->{who} . '...'; }
+        case m/thanks/si        { $reply = 'No problem ' . $message->{real_who} . '!'; }
+        case m/greets/si        { $reply = 'Hey there ' . $message->{real_who} . '!'; }
+        case m/(hits|spanks|slaps)/si { $reply = 'That\'s not nice ' . $message->{real_who} . '...'; }
         case m/kicks/si {
+            if ( $message->{real_who} ne $message->{who} ) {
+                $server->{bot}->reply( 'Kicking me from inside your game, ' . $message->{who} . '? Don\'t be a wuss and try that again in IRC!', $message );
+                return;
+            }
             if ( $server->isChannelOperator( $message->{who}, $message->{channel} ) ) {
                 $server->{bot}->reply(
                     'You\'re an operator, '

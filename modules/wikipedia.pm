@@ -93,7 +93,7 @@ sub handleSaidWikipedia {
         my $wikiurl = $data->{query}->{pages}->{ $pageID[0] }->{title};
         $wikiurl =~ s/\s/_/g;
         $reply =
-          $message->{who} . ": Wikipedia entry for '$page' (http://$lang.wikipedia.org/wiki/$wikiurl):\n$wikidata";
+          $message->{real_who} . ": Wikipedia entry for '$page' (http://$lang.wikipedia.org/wiki/$wikiurl):\n$wikidata";
     }
     $server->{bot}->reply( $reply, $message );
 }

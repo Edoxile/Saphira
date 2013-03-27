@@ -44,7 +44,7 @@ sub handleSaidTitle {
     return unless defined($title);
 
     $server->{bot}->say(
-        who     => $message->{who},
+        who     => $message->{real_who},
         channel => $message->{channel},
         body    => "[ $title ]",
         address => $message->{address}
