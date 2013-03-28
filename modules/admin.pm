@@ -23,8 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 package Saphira::Module::Admin;
 use base 'Saphira::Module';
 use warnings;
-use warnings;
-use strict;
+no warnings 'redefine';
 use strict;
 
 sub init {

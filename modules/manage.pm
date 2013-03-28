@@ -51,6 +51,8 @@ sub init {
     $self->registerHook( 'said',    \&handleSaidOp );
     $self->registerHook( 'said',    \&handleSaidDeop );
     $self->registerHook( 'said',    \&handleSaidSave );
+    $self->registerHook( 'said',    \&handleSaidListOps );
+    $self->registerHook( 'said',    \&handleSaidWhoami );
     $self->registerHook( 'invited', \&handleInvited );
     $self->registerHook( 'kicked',  \&handleKicked );
 }
@@ -68,6 +70,32 @@ sub handleInvited {
     print '>> Joining channel: ' . $message->{channel} . ', invited by: ' . $message->{who} . "\n";
 
     $server->joinChannel( $message->{channel} );
+}
+
+handleSaidListOps {
+    my ( $wrapper, $server, $message ) = @_;
+    
+    return unless ( $message->{body} =~ m/^!list ops/ );
+    my @ops = ();
+    my @users = $server->getUsers();
+    for $user (@users) {
+        push ( @ops, $user->getUsername() ) if $user->isOperator();
+    }
+    $server->{bot}->reply( "\x02Operators: \x0F" . join (', ', @ops) . '.', $message );
+}
+
+handleSaidWhoami {
+    my ( $wrapper, $server, $message ) = @_;
+    
+    return unless ( $message->{body} =~ m/^!whoami/ );
+    my $user = $server->getUser( $message->{raw_nick} );
+    my $reply = '';
+    if ( not defined $user or $user eq undef ) {
+        $reply = "You're not logged in at the moment.";
+    } else {
+        $reply = "You're logged in as" . ($user->isOperator()?' operator':'') . " \x02" . $user->getUsername() . ".\x0F";
+    }
+    $server->{bot}->reply( $reply, $message );
 }
 
 sub handleSaidSave {
@@ -89,7 +117,7 @@ sub handleSaidSave {
 sub handleSaidChanJoin {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/^!join\s(.+?)(?:\s(.+?))?$/ );
+    return unless ( $message->{body} =~ m/^!join (.+?)(?: (.+?))?$/ );
 
     print '>> Joining channel: ' . $1 . ', invited by: ' . $message->{who} . "\n";
 
@@ -102,7 +130,7 @@ sub handleSaidChanJoin {
 sub handleSaidChanPart {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/^!part\s(.+?)(?:\s(.+?))?$/ );
+    return unless ( $message->{body} =~ m/^!part (.+?)(?: (.+?))?$/ );
     return unless ( getAuthLevel( $server, $message ) gt 5 );
 
     print '>> Parting channel: ' . $1 . ', called by: ' . $message->{who} . "\n";
