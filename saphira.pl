@@ -94,8 +94,8 @@ sub said {
     my $data = $_[1];
     $data->{body} =~ s/\cC\d{1,2}(?:,\d{1,2})?|[\cC\cB\cI\cU\cR\cO]//g;
     if ( $data->{body} =~ m/^\* ([\w\d_]+) (.+?)$/ ) {
-        $data->{real_who}  = $1;
-        $data->{body} = $2;
+        $data->{real_who} = $1;
+        $data->{body}     = $2;
         $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $data );
         return;
     }
@@ -402,10 +402,10 @@ sub setState {
 }
 
 sub kick {
-    my $self = shift;
-    my $user = shift;
+    my $self   = shift;
+    my $user   = shift;
     my $reason = shift || 'Bye bye!';
-    $self->{server}->kick($user,$self->{name},$reason);
+    $self->{server}->kick( $user, $self->{name}, $reason );
 }
 
 sub _insert {
@@ -544,7 +544,7 @@ sub getUser {
 
 sub getUsers {
     my $self = shift;
-    return @{ values $self->{users} };
+    return ( values $self->{users} );
 }
 
 sub getUserByName {
@@ -642,11 +642,11 @@ sub isChannelOperator {
 }
 
 sub kick {
-    my $self = shift;
+    my $self    = shift;
     my $channel = shift;
-    my $user = shift;
-    my $reason = shift || 'Bye bye!';
-    $self->{bot}->kick($user,$channel,$reason);
+    my $user    = shift;
+    my $reason  = shift || 'Bye bye!';
+    $self->{bot}->kick( $user, $channel, $reason );
 }
 
 sub _getServerId {

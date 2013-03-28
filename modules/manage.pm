@@ -74,28 +74,29 @@ sub handleInvited {
 
 sub handleSaidListOps {
     my ( $wrapper, $server, $message ) = @_;
-    
+
     return unless ( $message->{body} =~ m/^!list ops/ );
 
-    my @ops = ();
+    my @ops   = ();
     my @users = $server->getUsers();
     foreach my $user (@users) {
-        push ( @ops, $user->getUsername() ) if $user->isOperator();
+        push( @ops, $user->getUsername() ) if $user->isOperator();
     }
-    $server->{bot}->reply( "\x02Operators: \x0F" . join (', ', @ops) . '.', $message );
+    $server->{bot}->reply( "\x02Operators: \x0F" . join( ', ', @ops ) . '.', $message );
 }
 
 sub handleSaidWhoami {
     my ( $wrapper, $server, $message ) = @_;
-    
+
     return unless ( $message->{body} =~ m/^!whoami/ );
 
-    my $user = $server->getUser( $message->{raw_nick} );
+    my $user  = $server->getUser( $message->{raw_nick} );
     my $reply = '';
     if ( not defined $user ) {
         $reply = "You're not logged in at the moment.";
     } else {
-        $reply = "You're logged in as" . ( $user->isOperator() ? ' operator' : '' ) . " \x02" . $user->getUsername() . ".\x0F";
+        $reply =
+          "You're logged in as" . ( $user->isOperator() ? ' operator' : '' ) . " \x02" . $user->getUsername() . ".\x0F";
     }
     $server->{bot}->reply( $reply, $message );
 }
@@ -108,7 +109,7 @@ sub handleSaidSave {
 
     my $chan = $server->getChannel( $message->{channel} );
     return unless defined $chan;
-    $chan->setPassword( $1, 1 ) if (not defined($1) or $1 ne '');
+    $chan->setPassword( $1, 1 ) if ( not defined($1) or $1 ne '' );
     if ( $chan->setState(1) ) {
         $server->{bot}->reply( "\x02Channel state changed successfully.\x0F", $message );
     } else {
