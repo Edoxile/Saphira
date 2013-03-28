@@ -49,7 +49,7 @@ sub handleSaidKick {
     
     my $reason = ( defined $2 ? $2 : "Apparently you're not wanted here..." );
     
-    $server->kick( $1, $message->{channel} );
+    $server->kick( $1, $message->{channel}, $reason );
 }
 
 1;
