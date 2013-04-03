@@ -39,15 +39,15 @@ sub handleSaidTitle {
 
     return unless ( $message->{body} =~ m/((?:https?:\/\/|www\.)[-~=\\\/a-zA-Z0-9\.:_\?&%,#\+]+)/ );
     return if ( $1 eq '' );
-    
+
     my $url = $1;
     $url =~ s/http:\/\/(?:www\.)?youtube\.(.+?)$/https:\/\/www\.youtube\.$1/;
-    
+
     my $title = title($url);
     return unless defined($title);
 
     $server->{bot}->say(
-        who     => ($message->{channel} eq 'msg' ? $message->{who} : $message->{real_who}),
+        who => ( $message->{channel} eq 'msg' ? $message->{who} : $message->{real_who} ),
         channel => $message->{channel},
         body    => "[ $title ]",
         address => $message->{address}
