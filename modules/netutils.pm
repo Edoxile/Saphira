@@ -26,6 +26,7 @@ use warnings;
 no warnings 'redefine';
 use strict;
 
+
 sub init {
     my ( $self, $message, $args ) = @_;
 
@@ -34,13 +35,14 @@ sub init {
 
 sub handleSaidPing {
     my ( $wrapper, $server, $message ) = @_;
-
-    return unless ( $message->{body} =~ m/^!ping ([\w\d\.\-]+)$/ );
-
+    
+    return unless ($message->{body} =~ m/^!ping ([\w\d\.\-]+)$/);
+    
     my $ping = $1;
     my $ip   = '';
-
-    if ( $ping =~ m/^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9]))$/ ) {
+    my $host = '';
+    
+    if ( $ping =~ m/^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9]))$/ ){
         $ip = $ping;
         my @data = `host $ip`;
         $host = shift @data;
@@ -53,21 +55,17 @@ sub handleSaidPing {
     }
     $ip =~ s/\n//gs;
     $host =~ s/\n//gs;
-
-    if ( `host $ip` =~ m/not found:/ ) {
-        $server->{bot}
-          ->reply( "I'm sorry $message->{who}, the input is either an invalid hostname or an invalid ipv4-address.",
-            $message );
+    
+    if(`host $ip` =~ m/not found:/) {
+        $server->{bot}->reply("I'm sorry $message->{who}, the input is either an invalid hostname or an invalid ipv4-address.", $message);
     } else {
-        my @data       = `ping -q -c 4 $ip`;
+        my @data = `ping -q -c 4 $ip`;
         my $packetinfo = $data[3];
-        my $timeinfo   = $data[4];
+        my $timeinfo = $data[4];
         $packetinfo =~ s/\n//gs;
         $timeinfo =~ s/\n//gs;
-        print
-">> Ping [$message->{who}, $message->{real_who}, $host, $ip]: Ping statistics for $host ($ip): $packetinfo; $timeinfo\n";
-        $server->{bot}
-          ->reply( "$message->{real_who}: Ping statistics for $host ($ip): $packetinfo; $timeinfo", $message );
+        print ">> Ping [$message->{who}, $message->{real_who}, $host, $ip]: Ping statistics for $host ($ip): $packetinfo; $timeinfo\n";
+        $server->{bot}->reply("$message->{real_who}: Ping statistics for $host ($ip): $packetinfo; $timeinfo", $message);
     }
 }
 
