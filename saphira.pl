@@ -258,7 +258,6 @@ sub part_channel {
 
 sub kick {
     my ( $self, $channel, $user, $reason ) = @_;
-    print ">> POE: kick, $channel, $user, $reason\n";
     $poe_kernel->post( $self->{IRCNAME}, 'kick', $self->charset_encode($channel, $user, $reason) );
 }
 
@@ -676,7 +675,6 @@ sub kick {
     my $channel = shift;
     my $user    = shift;
     my $reason  = shift || 'Bye bye!';
-    print ">> Kicking $user from $channel because: $reason\n";
     $self->{bot}->kick( $channel, $user, $reason );
 }
 

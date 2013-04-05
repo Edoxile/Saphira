@@ -51,7 +51,7 @@ sub handleSaidKick {
     
     print ">> $message->{who} kicking $1 from $message->{channel}, reason: $reason\n";
     
-    $server->kick( $1, $message->{channel}, $reason );
+    $server->kick( $message->{channel}, $1, $reason );
 }
 
 1;
