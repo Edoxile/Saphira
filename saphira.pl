@@ -257,8 +257,9 @@ sub part_channel {
 }
 
 sub kick {
-    my ( $self, $user, $channel, $reason ) = @_;
-    $poe_kernel->post( $self->{IRCNAME}, 'kick', $channel, $user, $reason );
+    my ( $self, $channel, $user, $reason ) = @_;
+    print ">> POE: kick, $channel, $user, $reason\n";
+    $poe_kernel->post( $self->{IRCNAME}, 'kick', $self->charset_encode($channel, $user, $reason) );
 }
 
 sub _loadChannels {
@@ -675,7 +676,8 @@ sub kick {
     my $channel = shift;
     my $user    = shift;
     my $reason  = shift || 'Bye bye!';
-    $self->{bot}->kick( $user, $channel, $reason );
+    print ">> Kicking $user from $channel because: $reason\n";
+    $self->{bot}->kick( $channel, $user, $reason );
 }
 
 sub _getServerId {
