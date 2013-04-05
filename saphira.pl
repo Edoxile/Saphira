@@ -92,6 +92,7 @@ sub new {
 
 sub said {
     my $data = $_[1];
+    $data->{body_raw} = $data->{body}
     $data->{body} =~ s/\cC\d{1,2}(?:,\d{1,2})?|[\cC\cB\cI\cU\cR\cO]//g;
     if ( $data->{body} =~ m/^\* ([\w\d_]+) (.+?)$/ ) {
         $data->{real_who} = $1;
@@ -110,9 +111,7 @@ sub said {
 }
 
 sub emoted {
-    my $data = $_[1];
-    $data->{real_who} = $data->{who};
-    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $data );
+    $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $_[1] );
     return;
 }
 
@@ -167,6 +166,29 @@ sub help { return $botinfo; }
 sub init {
 
     return 1;
+}
+
+sub start_state {
+    my ($self, $kernel, $session) = @_[OBJECT, KERNEL, SESSION];
+    my $ret = $self->SUPER::start_state($self, $kernel, $session);
+    $kernel->state('irc_invite', $self, 'handle_invite');
+    $kernel->state('irc_mode', $self, 'handle_mode');
+    return $ret;
+}
+
+sub handle_invite {
+    my ($self, $inviter, $channel, $key) = @_[OBJECT, ARG0, ARG1];
+    $self->{wrapper}->processHooks( $self->{serv}, 'invited', {inviter => $inviter, channel => $channel});
+}
+
+sub handle_mode {
+    my ($self, $source, $channel, $mode, @args) = @_[OBJECT, ARG0, ARG1, ARG2, ARG3 .. $#_];
+    $self->{wrapper}->processHooks( $self->{serv}, 'mode', {
+        source => $source,
+        channel => $channel,
+        mode => $mode,
+        args => join(' ', @args)
+    });
 }
 
 sub connected {
@@ -366,6 +388,11 @@ sub getName {
     return $self->{name};
 }
 
+sub isLoggingEnabled {
+    my $self = shift;
+    return $self->{log};
+}
+
 sub getState {
     my $self = shift;
     return $self->{state};
@@ -422,6 +449,7 @@ sub _insert {
 
 sub _disable {
     my $self = shift;
+    return unless $self->{state} ne 0;
     $self->{state} = 0;
     my $ps = $self->handleQuery('update');
     if ( $ps->err ) {
@@ -434,6 +462,7 @@ sub _disable {
 
 sub _enable {
     my $self = shift;
+    return unless $self->{state} ne 1;
     $self->{state} = 1;
     my $ps = $self->handleQuery('update');
     if ( $ps->err ) {
@@ -657,7 +686,7 @@ sub _getServerId {
 sub _getChannelId {
     my ( $self, $channelName ) = @_;
     foreach my $key ( keys %{ $self->{channels} } ) {
-        if ( $self->{channels}->{$key}->{name} eq $channelName ) {
+        if ( $self->{channels}->{$key}->getName() eq $channelName ) {
             return $key;
         }
     }

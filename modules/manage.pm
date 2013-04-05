@@ -67,7 +67,7 @@ sub getAuthLevel {
 sub handleInvited {
     my ( $wrapper, $server, $message ) = @_;
 
-    print '>> Joining channel: ' . $message->{channel} . ', invited by: ' . $message->{who} . "\n";
+    print '>> Joining channel: ' . $message->{channel} . ', invited by: ' . $message->{inviter} . "\n";
 
     $server->joinChannel( $message->{channel} );
 }
