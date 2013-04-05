@@ -44,10 +44,12 @@ sub getAuthLevel {
 sub handleSaidKick {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/^!kick\s(.+?)(?:\s(.+?))?$/ );
+    return unless ( $message->{body} =~ m/^!kick (.+?)(?: (.+?))?$/ );
     return unless ( getAuthLevel($server, $message) gt 5 );
     
     my $reason = ( defined $2 ? $2 : "Apparently you're not wanted here..." );
+    
+    print ">> $message->{who} kicking $1 from $message->{channel}, reason: $reason\n";
     
     $server->kick( $1, $message->{channel}, $reason );
 }
