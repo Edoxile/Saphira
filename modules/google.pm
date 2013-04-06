@@ -87,7 +87,7 @@ sub handleYoutubeSearch {
 sub handleImageSearch {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{body} =~ m/^!g(?:oogle)?i(?:mages?) (.+?)$/ );
+    return unless ( $message->{body} =~ m/^!g(?:oogle)?i(?:mages?)? (.+?)$/ );
 
     print '>> Google image search term: [ ' . $1 . " ]\n";
 
