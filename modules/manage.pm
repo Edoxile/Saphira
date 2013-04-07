@@ -419,13 +419,15 @@ sub handleSaidRaw {
     my ( $wrapper, $server, $message ) = @_;
     return unless ( $message->{body} =~ m/^!raw (.+)$/ );
     return unless ( getAuthLevel( $server, $message ) gt 6 );
-    $server->raw( $1 );
+    print ">> Sending raw IRC: '$1' by $message->{who}\n";
+    $server->sendRawIRC( $1 . "\n" );
 }
 
 sub handleSaidMode {
     my ( $wrapper, $server, $message ) = @_;
     return unless ( $message->{channel} ne 'msg' and $message->{body} =~ m/^!mode (.+?)$/);
     return unless ( getAuthLevel( $server, $message) gt 5 );
+    print ">> Setting mode: '$message->{channel} $1' by $message->{who}\n";
     $server->setMode("$message->{channel} $1");
 }
 
