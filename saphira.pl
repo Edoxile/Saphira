@@ -253,12 +253,22 @@ sub join_channel {
 sub part_channel {
     my ( $self, $channel, $msg ) = @_;
     $msg = 'Bye!' unless defined($msg);
-    $poe_kernel->post( $self->{IRCNAME}, 'part', $channel, $msg );
+    $poe_kernel->post( $self->{IRCNAME}, 'part', $channel, $self->charset_encode($msg) );
+}
+
+sub raw {
+    my ( $self, $raw ) = @_;
+    $poe_kernel->post( $self->{IRCNAME}, 'quote', $raw );
 }
 
 sub kick {
     my ( $self, $channel, $user, $reason ) = @_;
     $poe_kernel->post( $self->{IRCNAME}, 'kick', $self->charset_encode($channel, $user, $reason) );
+}
+
+sub mode {
+    my ( $self, $changes ) = @_;
+    $poe_kernel->post( $self->{IRCNAME}, 'mode', $self->charset_encode($changes) );
 }
 
 sub _loadChannels {
@@ -676,6 +686,16 @@ sub kick {
     my $user    = shift;
     my $reason  = shift || 'Bye bye!';
     $self->{bot}->kick( $channel, $user, $reason );
+}
+
+sub setMode {
+    my ($self, $modes) = @_;
+    $self->{bot}->mode($modes);
+}
+
+sub sendRawIRC {
+    my ( $self, $raw ) = @_;
+    $self->{bot}->raw( $raw );
 }
 
 sub _getServerId {

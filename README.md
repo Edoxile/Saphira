@@ -1,5 +1,5 @@
 Saphira
-=======
+-------
 
 A perl-based IRC bot.
 
@@ -10,33 +10,28 @@ Modules
 
 These are the modules needed by this bot to run:
 
-Common
-------
-Config::IniFiles
-POE::Kernel
-POE::Component::IRC
-DBI
-DBD::mysql
-POE::Component::SSLify
+### Common ###
 
-Title 
------
-URI::Title
+- Config::IniFiles
+- POE::Kernel
+- POE::Component::IRC
+- DBI
+- DBD::mysql
+- POE::Component::SSLify
 
-Lastfm/wikipedia
-----------------
-JSON::XS
+### Title ###
+- URI::Title
 
-Google
-------
-Google::Search
-HTML::Entities
-Encode
+### Lastfm/wikipedia ###
+- JSON::XS
 
-WolframAlpha
-------------
-WWW::WolframAlpha
+### Google ###
+- Google::Search
+- HTML::Entities
+- Encode
 
-Interactive
------------
-Switch
+### WolframAlpha ###
+- WWW::WolframAlpha
+
+### Interactive ###
+- Switch

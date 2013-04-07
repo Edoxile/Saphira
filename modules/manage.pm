@@ -413,6 +413,20 @@ sub handleSaidUpdate {
     }
 }
 
+sub handleSaidRaw {
+    my ( $wrapper, $server, $message ) = @_;
+    return unless ( $message->{body} =~ m/^!raw (.+)$/ );
+    return unless ( getAuthLevel( $server, $message ) gt 6 );
+    $server->raw( $1 );
+}
+
+sub handleSaidMode {
+    my ( $wrapper, $server, $message ) = @_;
+    return unless ( $message->{channel} ne 'msg' and $message->{body} =~ m/^!mode (.+?)$/);
+    return unless ( getAuthLevel( $server, $message) gt 5 );
+    $server->setMode("$message->{channel} $1");
+}
+
 sub handleSaidCmd {
     my ( $wrapper, $server, $message ) = @_;
     return unless ( $message->{body} =~ m/^!cmd (.+)$/ );
