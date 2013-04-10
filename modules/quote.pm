@@ -109,11 +109,9 @@ sub handleSaidSubstitute {
     my $search = $1 || $2;
     my $replace = $3 || $4;
     
-    print ">>Debug: Replacing {$search} with {$replace}\n";
-    
     foreach my $msg (@{$buffer{$message->{channel}}}) {
         if ( $msg->{message} =~ m/\Q$search/i ) {
-            $msg->{message} =~ s/$search/$replace/ei;
+            eval("\$msg->{message} =~ s/\\Q$search/$replace/i;");
             $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $msg->{message}" : "<$msg->{who}> $msg->{message}" ), $message);
             last;
         }
@@ -123,15 +121,14 @@ sub handleSaidSubstitute {
 sub handleSaidSubstituteRegex {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $message->{body} =~ m/^s\/(.+?)\/(.+?)\// );
+    return unless ( $message->{body} =~ m/^s\/(.+?)\/(.+?)\/([^ ]+)?/ );
     my $search = $1;
     my $replace = $2;
-    
-    print ">>Debug: Replacing regex {$search} with regex {$replace}\n";
+    my $modifiers = $3 || '';
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
         if ( $msg->{message} =~ m/$search/i ) {
-            $msg->{message} =~ s/$search/$replace/ei;
+            eval("\$msg->{message} =~ s/$search/$replace/i$modifiers;");
             $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $msg->{message}" : "<$msg->{who}> $msg->{message}" ), $message);
             last;
         }
