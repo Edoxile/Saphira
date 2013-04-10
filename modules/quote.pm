@@ -41,7 +41,7 @@ sub init {
 sub handleSaid {
     my ( $wrapper, $server, $message ) = @_;
     
-    return if ( $message->{body} =~ m/^(s\/|q\/|!)/ or $message->{channel} eq 'msg' or $message->{who} eq 'Saphira' );
+    return if ( $message->{body} =~ m/^(s\/|q\/|!)/ or $message->{channel} eq 'msg' );
     
     $buffer{$message->{channel}} = () if not defined $buffer{$message->{channel}};
     my $msg = {};
@@ -56,7 +56,7 @@ sub handleSaid {
 sub handleEmoted {
     my ( $wrapper, $server, $message ) = @_;
     
-    return if ( $message->{channel} eq 'msg' or $message->{who} eq 'Saphira' );
+    return if ( $message->{channel} eq 'msg' );
     
     $buffer{$message->{channel}} = () if not defined $buffer{$message->{channel}};
     my $msg = {};
@@ -93,8 +93,9 @@ sub handleSaidSubstitute {
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
         if ( $msg->{message} =~ m/$search/i ) {
-            eval("\$msg->{message} =~ s/$search/$replace/i$modifiers;");
-            $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $msg->{message}" : "<$msg->{who}> $msg->{message}" ), $message);
+            my $response = $msg->{message};
+            eval("\$response =~ s/$search/$replace/i$modifiers;");
+            $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $response" : "<$msg->{who}> $response" ), $message);
             last;
         }
     }
