@@ -105,7 +105,7 @@ sub handleSaidQuoteRegex {
 sub handleSaidSubstitute {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $body->{message} =~ m/^!s (?:(?:"(.+?)"|([^ ]+) (?:"(.+?)"|(.+?))$/ );
+    return unless ( $body->{message} =~ m/^!s (?:"(.+?)"|([^ ]+)) (?:"(.+?)"|(.+?))$/ );
     my $search = $1 || $2;
     my $replace = $3 || $4;
     
