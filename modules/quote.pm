@@ -53,7 +53,7 @@ sub handleSaid {
     $msg->{emoted}  = 0;
     unshift( @{$buffer{$message->{channel}}}, $msg );
     while ( scalar @{$buffer{$message->{channel}}} gt 100 ) {
-        pop $buffer{$message->{channel}};
+        pop @{$buffer{$message->{channel}}};
     }
 }
 
@@ -70,7 +70,7 @@ sub handleEmoted {
     $msg->{emoted}  = 1;
     unshift( @{$buffer{$message->{channel}}}, $msg );
     while ( scalar @{$buffer{$message->{channel}}} gt 100 ) {
-        pop $buffer{$message->{channel}};
+        pop @{$buffer{$message->{channel}};
     }
 }
 
@@ -109,6 +109,8 @@ sub handleSaidSubstitute {
     my $search = $1 || $2;
     my $replace = $3 || $4;
     
+    print ">>Debug: Replacing {$search} with {$replace}\n";
+    
     foreach my $msg (@{$buffer{$message->{channel}}}) {
         if ( $msg->{message} =~ m/\Q$search/i ) {
             $msg->{message} =~ s/$search/$replace/ei;
@@ -124,6 +126,8 @@ sub handleSaidSubstituteRegex {
     return unless ( $message->{body} =~ m/^s\/(.+?)\/(.+?)\// );
     my $search = $1;
     my $replace = $2;
+    
+    print ">>Debug: Replacing regex {$search} with regex {$replace}\n";
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
         if ( $msg->{message} =~ m/$search/i ) {
