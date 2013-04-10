@@ -35,9 +35,7 @@ sub init {
     $self->registerHook('emoted', \&handleEmoted);
     
     $self->registerHook('said', \&handleSaidQuote);
-    $self->registerHook('said', \&handleSaidQuoteRegex);
     $self->registerHook('said', \&handleSaidSubstitute);
-    $self->registerHook('said', \&handleSaidSubstituteRegex);
 }
 
 sub handleSaid {
@@ -48,7 +46,7 @@ sub handleSaid {
     $buffer{$message->{channel}} = () if not defined $buffer{$message->{channel}};
     my $msg = {};
     $msg->{channel} = $message->{channel};
-    $msg->{who}     = $message->{who};
+    $msg->{who}     = $message->{real_who};
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 0;
     unshift( @{$buffer{$message->{channel}}}, $msg );
@@ -63,7 +61,7 @@ sub handleEmoted {
     $buffer{$message->{channel}} = () if not defined $buffer{$message->{channel}};
     my $msg = {};
     $msg->{channel} = $message->{channel};
-    $msg->{who}     = $message->{who};
+    $msg->{who}     = $message->{real_who};
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 1;
     unshift( @{$buffer{$message->{channel}}}, $msg );
@@ -71,20 +69,6 @@ sub handleEmoted {
 }
 
 sub handleSaidQuote {
-    my ( $wrapper, $server, $message ) = @_;
-    
-    return unless ( $message->{body} =~ m/^!q (.+?)$/ );
-    my $search = $1;
-    
-    foreach my $msg (@{$buffer{$message->{channel}}}) {
-        if ( $msg->{message} =~ m/\Q$search/i ) {
-            $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $msg->{message}" : "<$msg->{who}> $msg->{message}" ), $message);
-            last;
-        }
-    }
-}
-
-sub handleSaidQuoteRegex {
     my ( $wrapper, $server, $message ) = @_;
     
     return unless ( $message->{body} =~ m/^q\/(.+?)\// );
@@ -101,28 +85,11 @@ sub handleSaidQuoteRegex {
 sub handleSaidSubstitute {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $message->{body} =~ m/^!s (?:"(.+?)"|([^ ]+)) (?:"(.+?)"|(.+?))$/ );
-    my $search = $1 || $2;
-    my $replace = $3 || $4;
-    
-    foreach my $msg (@{$buffer{$message->{channel}}}) {
-        if ( $msg->{message} =~ m/\Q$search/i ) {
-            eval("$msg->{message} =~ s/\\Q$search/\Q$replace/i;");
-            $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $msg->{message}" : "<$msg->{who}> $msg->{message}" ), $message);
-            last;
-        }
-    }
-}
-
-sub handleSaidSubstituteRegex {
-    my ( $wrapper, $server, $message ) = @_;
-    
     return unless ( $message->{body} =~ m/^s\/(.+?)\/(.+?)\/([^ ]+)?/ );
     my $search = $1;
     my $replace = $2;
     my $modifiers = $3 || '';
     $modifiers =~ s/[^\w]//g;
-    $search =~ s/\$/\\\$/g;
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
         if ( $msg->{message} =~ m/$search/i ) {
