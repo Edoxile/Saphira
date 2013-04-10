@@ -91,7 +91,7 @@ sub new {
 }
 
 sub said {
-    return if $_[1]->{who} eq $_[0]->nick();
+    return unless $_[1]->{who} ne $_[0]->nick();
     my $data = $_[1];
     $data->{body_raw} = $data->{body};
     $data->{body} =~ s/\cC\d{1,2}(?:,\d{1,2})?|[\cC\cB\cI\cU\cR\cO]//g;
@@ -112,13 +112,13 @@ sub said {
 }
 
 sub emoted {
-    return if $_[1]->{who} eq $_[0]->nick();
+    return unless $_[1]->{who} ne $_[0]->nick();
     $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'emoted', $_[1] );
     return;
 }
 
 sub noticed {
-    return if $_[1]->{who} eq $_[0]->nick();
+    return unless $_[1]->{who} ne $_[0]->nick();
     $_[0]->{wrapper}->processHooks( $_[0]->{serv}, 'noticed', $_[1] );
     return;
 }
