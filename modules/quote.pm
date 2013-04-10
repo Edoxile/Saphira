@@ -70,7 +70,7 @@ sub handleEmoted {
     $msg->{emoted}  = 1;
     unshift( @{$buffer{$message->{channel}}}, $msg );
     while ( scalar @{$buffer{$message->{channel}}} gt 100 ) {
-        pop @{$buffer{$message->{channel}};
+        pop @{$buffer{$message->{channel}}};
     }
 }
 
