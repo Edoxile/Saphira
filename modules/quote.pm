@@ -52,7 +52,7 @@ sub handleSaid {
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 0;
     unshift( @{$buffer{$message->{channel}}}, $msg );
-    $buffer{$message->{channel}} = splice @{$buffer{$message->{channel}}}, 0, 99;
+    $buffer{$message->{channel}} = [ splice ( @{$buffer{$message->{channel}}}, 0, 99 ) ];
 }
 
 sub handleEmoted {
@@ -67,7 +67,7 @@ sub handleEmoted {
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 1;
     unshift( @{$buffer{$message->{channel}}}, $msg );
-    $buffer{$message->{channel}} = splice @{$buffer{$message->{channel}}}, 0, 99;
+    $buffer{$message->{channel}} = [ splice( @{$buffer{$message->{channel}}}, 0, 99 ) ];
 }
 
 sub handleSaidQuote {
