@@ -52,7 +52,7 @@ sub handleSaid {
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 0;
     unshift( @{$buffer{$message->{channel}}}, $msg );
-    while ( scalar @{$buffer{$message->{channel}}} gt 100 ) {
+    while ( scalar ( @{$buffer{$message->{channel}}} ) gt 100 ) {
         pop @{$buffer{$message->{channel}}};
     }
 }
@@ -69,7 +69,7 @@ sub handleEmoted {
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 1;
     unshift( @{$buffer{$message->{channel}}}, $msg );
-    while ( scalar @{$buffer{$message->{channel}}} gt 100 ) {
+    while ( scalar ( @{$buffer{$message->{channel}}} ) gt 100 ) {
         pop @{$buffer{$message->{channel}}};
     }
 }
@@ -111,7 +111,7 @@ sub handleSaidSubstitute {
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
         if ( $msg->{message} =~ m/\Q$search/i ) {
-            eval("\$msg->{message} =~ s/\\Q$search/$replace/i;");
+            eval("$msg->{message} =~ s/\\Q$search/\Q$replace/i;");
             $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $msg->{message}" : "<$msg->{who}> $msg->{message}" ), $message);
             last;
         }
@@ -125,6 +125,8 @@ sub handleSaidSubstituteRegex {
     my $search = $1;
     my $replace = $2;
     my $modifiers = $3 || '';
+    $modifiers =~ s/[^\w]//g;
+    $search =~ s/\$/\\\$/g;
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
         if ( $msg->{message} =~ m/$search/i ) {
