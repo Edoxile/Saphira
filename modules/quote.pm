@@ -77,7 +77,7 @@ sub handleEmoted {
 sub handleSaidQuote {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $body->{message} =~ m/^!q (.+?)$/ );
+    return unless ( $message->{body} =~ m/^!q (.+?)$/ );
     my $search = $1;
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
@@ -91,7 +91,7 @@ sub handleSaidQuote {
 sub handleSaidQuoteRegex {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $body->{message} =~ m/^q\/(.+?)\// );
+    return unless ( $message->{body} =~ m/^q\/(.+?)\// );
     my $search = $1;
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
@@ -105,7 +105,7 @@ sub handleSaidQuoteRegex {
 sub handleSaidSubstitute {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $body->{message} =~ m/^!s (?:"(.+?)"|([^ ]+)) (?:"(.+?)"|(.+?))$/ );
+    return unless ( $message->{body} =~ m/^!s (?:"(.+?)"|([^ ]+)) (?:"(.+?)"|(.+?))$/ );
     my $search = $1 || $2;
     my $replace = $3 || $4;
     
@@ -121,7 +121,7 @@ sub handleSaidSubstitute {
 sub handleSaidSubstituteRegex {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $body->{message} =~ m/^s\/(.+?)\/(.+?)\// );
+    return unless ( $message->{body} =~ m/^s\/(.+?)\/(.+?)\// );
     my $search = $1;
     my $replace = $2;
     
