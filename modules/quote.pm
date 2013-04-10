@@ -51,7 +51,7 @@ sub handleSaid {
     $msg->{who}     = $message->{who};
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 0;
-    unshift( $buffer{$message->{channel}}, $msg );
+    unshift( @{$buffer{$message->{channel}}}, $msg );
     while ( scalar @{$buffer{$message->{channel}}} gt 100 ) {
         pop $buffer{$message->{channel}};
     }
@@ -68,7 +68,7 @@ sub handleEmoted {
     $msg->{who}     = $message->{who};
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 1;
-    unshift( $buffer{$message->{channel}}, $msg );
+    unshift( @{$buffer{$message->{channel}}}, $msg );
     while ( scalar @{$buffer{$message->{channel}}} gt 100 ) {
         pop $buffer{$message->{channel}};
     }
