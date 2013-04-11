@@ -71,11 +71,13 @@ sub handleEmoted {
 sub handleSaidQuote {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $message->{body} =~ m/^q\/(.+?)\// );
+    return unless ( $message->{body} =~ m/^q\/(.+?)\/(i)?/ );
     my $search = $1;
+    my $ignoreCase = $2 || '';
+    my $ignoreCase = ( $ignoreCase =~ m/i/ );
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
-        if ( $msg->{message} =~ m/$search/i ) {
+        if ( ( not $ignoreCase and $message->{message} =~ m/$search/ ) or ( $ignoreCase and $msg->{message} =~ m/$search/i ) ) {
             $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $msg->{message}" : "<$msg->{who}> $msg->{message}" ), $message);
             last;
         }
@@ -85,16 +87,16 @@ sub handleSaidQuote {
 sub handleSaidSubstitute {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $message->{body} =~ m/^s\/(.+?)\/(.+?)\/([^ ]+)?/ );
+    return unless ( $message->{body} =~ m/^s\/(.+?)\/(.+?)\/(\w+)?/ );
     my $search = $1;
     my $replace = $2;
     my $modifiers = $3 || '';
-    $modifiers =~ s/[^\w]//g;
+    my $ignoreCase = ( $modifiers =~ m/i/ );
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
-        if ( $msg->{message} =~ m/$search/i ) {
+        if ( ( not $ignoreCase and $message->{message} =~ m/$search/ ) or ( $ignoreCase and $msg->{message} =~ m/$search/i ) ) {
             my $response = $msg->{message};
-            eval("\$response =~ s/$search/$replace/i$modifiers;");
+            eval("\$response =~ s/$search/$replace/$modifiers;");
             $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $response" : "<$msg->{who}> $response" ), $message);
             last;
         }
