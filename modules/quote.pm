@@ -71,7 +71,7 @@ sub handleEmoted {
 sub handleSaidQuote {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $message->{body} =~ m/^q\/(.+?)\/([^ ]+)?/ );
+    return unless ( $message->{body} =~ m/^q\/(.+?)\/(\w+)?/ );
     my $search = $1;
     my $ignoreCase = $2 || '';
     my $ignoreCase = ( $ignoreCase =~ m/i/ );
@@ -87,7 +87,7 @@ sub handleSaidQuote {
 sub handleSaidSubstitute {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ( $message->{body} =~ m/^s\/(.+?)\/(.+?)\/([^ ]+)?/ );
+    return unless ( $message->{body} =~ m/^s\/(.+?)\/(.*?)\/(\w+)?/ );
     my $search = $1;
     my $replace = $2;
     my $modifiers = $3 || '';
