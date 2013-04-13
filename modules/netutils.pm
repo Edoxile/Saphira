@@ -73,7 +73,7 @@ sub handleSaidPing {
 sub handleSaidHost {
     my ( $wrapper, $server, $message ) = @_;
     
-    return unless ($message->{body} =~ m/^!host ([\w\d\.\-]+)$/);
+    return unless ($message->{body} =~ m/^!host ([\w\d\.\-\:]+)$/);
     
     my $host = $1;
     
