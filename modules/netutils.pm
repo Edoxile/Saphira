@@ -79,6 +79,9 @@ sub handleSaidHost {
     
     my @data = `host $host`;
     @data = grep ( !m/mail is handled by/, @data );
+    for (@data) {
+        s/\n|\r//sg;
+    }
     
     $server->{bot}->reply("$message->{real_who}: host info for $host: " . join ( '; ', @data ), $message );
 }
