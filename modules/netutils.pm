@@ -31,6 +31,7 @@ sub init {
     my ( $self, $message, $args ) = @_;
 
     $self->registerHook( 'said', \&handleSaidPing );
+    $self->registerHook( 'said', \&handleSaidHost );
 }
 
 sub handleSaidPing {
@@ -69,4 +70,16 @@ sub handleSaidPing {
     }
 }
 
+sub handleSaidHost {
+    my ( $wrapper, $server, $message ) = @_;
+    
+    return unless ($message->{body} =~ m/^!host ([\w\d\.\-]+)$/);
+    
+    my $host = $1;
+    
+    my @data = `host $host`;
+    @data = grep ( !m/mail is handled by/, @data );
+    
+    $server->{bot}->reply("$message->{real_who}: host info for $host: " . join ( '; ', @data ), $message );
+}
 1;

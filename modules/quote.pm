@@ -36,6 +36,9 @@ sub init {
     
     $self->registerHook('said', \&handleSaidQuote);
     $self->registerHook('said', \&handleSaidSubstitute);
+    $self->registerHook('said', \&handleSaidQuoteUser);
+    $self->registerHook('said', \&handleSaidSubstituteUser);
+    $self->registerHook('said', \&handleSaidSwitch);
 }
 
 sub handleSaid {
@@ -95,6 +98,71 @@ sub handleSaidSubstitute {
     
     foreach my $msg (@{$buffer{$message->{channel}}}) {
         if ( ( $msg->{message} =~ m/$search/ ) or ( $caseInsensitive and $msg->{message} =~ m/$search/i ) ) {
+            my $response = $msg->{message};
+            eval("\$response =~ s/$search/$replace/$modifiers;");
+            $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $response" : "<$msg->{who}> $response" ), $message);
+            last;
+        }
+    }
+}
+
+sub handleSaidSwitch {
+    my ( $wrapper, $server, $message ) = @_;
+    
+    return unless ( $message->{body} =~ m/^sd\/(.+?)\/(.*?)\/(\w+)?/ );
+    my $word1 = $1;
+    my $word2 = $2;
+    my $modifiers = $3 || '';
+    my $caseInsensitive = ($modifiers =~ m/i/);
+    
+    foreach my $msg (@{$buffer{$message->{channel}}}) {
+        my $response = $msg->{message};
+        if ( $msg->{message} =~ m/$word1/ and $msg->{message} =~ m/$word2/ ){
+            $response =~ s/\Q$word1\E/\x1A/g;
+            $response =~ s/\Q$word2/$word1\E/g;
+            $response =~ s/\x1A/\Q$word2\E/g;
+            $response =~ s/\\(.)/$1/g;
+        } elsif ( $caseInsensitive and $msg->{message} =~ m/$word1/i and $msg->{message} =~ m/$word2/i ) {
+            $response =~ s/\Q$word1\E/\x1A/ig;
+            $response =~ s/\Q$word2/$word1\E/ig;
+            $response =~ s/\x1A/\Q$word2\E/ig;
+            $response =~ s/\\(.)/$1/ig;
+        } else {
+            next;
+        }
+        $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $response" : "<$msg->{who}> $response" ), $message);
+    }
+}
+
+sub handleSaidQuoteUser {
+    my ( $wrapper, $server, $message ) = @_;
+    
+    return unless ( $message->{body} =~ m/^qu\/(.+?)\/(.+?)\/(\w+)?/ );
+    my $who = $1;
+    my $search = $2;
+    my $modifiers = $3 || '';
+    my $caseInsensitive = ($modifiers =~ m/i/);
+    
+    foreach my $msg (@{$buffer{$message->{channel}}}) {
+        if ( $msg->{who} =~ m/^$who/i and ( ( $msg->{message} =~ m/$search/ ) or ( $caseInsensitive and $msg->{message} =~ m/$search/i ) ) ) {
+            $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $msg->{message}" : "<$msg->{who}> $msg->{message}" ), $message);
+            last;
+        }
+    }
+}
+
+sub handleSaidSubstituteUser {
+    my ( $wrapper, $server, $message ) = @_;
+    
+    return unless ( $message->{body} =~ m/^su\/(.+?)\/(.+?)\/(.*?)\/(\w+)?/ );
+    my $who = $1;
+    my $search = $2;
+    my $replace = $3;
+    my $modifiers = $4 || '';
+    my $caseInsensitive = ($modifiers =~ m/i/);
+    
+    foreach my $msg (@{$buffer{$message->{channel}}}) {
+        if ( $msg->{who} =~ m/^$who/i and ( ( $msg->{message} =~ m/$search/ ) or ( $caseInsensitive and $msg->{message} =~ m/$search/i ) ) ) {
             my $response = $msg->{message};
             eval("\$response =~ s/$search/$replace/$modifiers;");
             $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $response" : "<$msg->{who}> $response" ), $message);
