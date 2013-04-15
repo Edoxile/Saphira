@@ -34,7 +34,7 @@ sub init {
 
     $dbd = $self->{wrapper}->createDBD();
     foreach my $server (values %{$self->{wrapper}->{servers}}) {
-        $ps{$server->getServerName()} = 'INSERT INTO ' . $server->getName() . '_logs (type, when, who, raw_nick, channel, body, address) VALUES (?, NOW(), ?, ?, ?, ?, ?);';
+        $ps{$server->getServerName()} = 'INSERT INTO ' . $server->getServerName() . '_logs (type, when, who, raw_nick, channel, body, address) VALUES (?, NOW(), ?, ?, ?, ?, ?);';
     }
 
     $self->registerHook('said', \&handleSaid);
@@ -58,49 +58,49 @@ sub handleSaid {
     my ( $wrapper, $server, $message ) = @_;
     return if ($message->{channel} eq 'msg');
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getName()}->execute('said', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('said', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleEmoted {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getName()}->execute('emote', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('emote', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleNoticed {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getName()}->execute('notice', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('notice', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleChanJoin {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getName()}->execute('chanjoin', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('chanjoin', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleChanPart {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getName()}->execute('chanpart', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('chanpart', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleTopic {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getName()}->execute('topic', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('topic', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleKicked {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getName()}->execute('kicked', $message->{who}, $message->{kicked}, $message->{channel}, $message->{reason}, undef);
+    $ps{$server->getServerName()}->execute('kicked', $message->{who}, $message->{kicked}, $message->{channel}, $message->{reason}, undef);
 }
 
 sub handleMode {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getName()}->execute('mode', undef, $message->{source}, $message->{channel}, ($message->{mode} . ' ' . $message->{args}), undef);
+    $ps{$server->getServerName()}->execute('mode', undef, $message->{source}, $message->{channel}, ($message->{mode} . ' ' . $message->{args}), undef);
 }
 
 1;
