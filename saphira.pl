@@ -368,12 +368,11 @@ sub new {
             },
             update => {
                 query => 'update channels set
-                      server = ?,
                       log = ?,
                       password = ?,
                       state = ?
                   where id = ?',
-                fields => [ 'server', 'logging', 'password', 'state', 'id' ]
+                fields => [ 'logging', 'password', 'state', 'id' ]
             }
         }
     }, $class;
@@ -403,14 +402,14 @@ sub getName {
 
 sub isLoggingEnabled {
     my $self = shift;
-    return $self->{log};
+    return $self->{logging};
 }
 
 sub enableLogging {
     my $self = shift;
     return 0 if $self->{state} ne 1;
-    return 0 if $self->{log};
-    $self->{log} = 1;
+    return 0 if $self->{logging};
+    $self->{logging} = 1;
     my $ps = $self->handleQuery('update');
     if ( $ps->err ) {
         print '[E] MySQL error: ' . $ps->errstr . "\n";
