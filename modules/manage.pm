@@ -88,6 +88,22 @@ sub handleSaidListOps {
     $server->{bot}->reply( "\x02Operators: \x0F" . join( ', ', @ops ) . '.', $message );
 }
 
+sub handleSaidLog {
+    my ( $wrapper, $server, $message ) = @_;
+
+    return unless ( $message->{body} =~ m/^!log/ );
+    return unless ( getAuthLevel( $server, $message ) gt 6 );
+
+    my $chan = $server->getChannel( $message->{channel} );
+    return unless defined $chan;
+    if ( $chan->enableLogging() ) {
+        $server->{bot}->reply( "\x02Logging enabled.\x0F", $message );
+    } else {
+        $server->{bot}->reply( "\x02Failed.\x0F Perhaps logging is already enabled?", $message );
+    }
+    
+}
+
 sub handleSaidWhoami {
     my ( $wrapper, $server, $message ) = @_;
 
