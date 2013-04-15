@@ -124,12 +124,11 @@ sub handleSaidWhoami {
 sub handleSaidSave {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{channel} ne 'msg' and $message->{body} =~ m/^!save$/ );
+    return unless ( $message->{channel} ne 'msg' and $message->{body} =~ m/^!save/ );
     return unless ( getAuthLevel( $server, $message ) gt 6 );
 
     my $chan = $server->getChannel( $message->{channel} );
     return unless defined $chan;
-    $chan->setPassword( $1, 1 ) if ( not defined($1) or $1 ne '' );
     if ( $chan->setState(1) ) {
         $server->{bot}->reply( "\x02Channel state changed successfully.\x0F", $message );
     } else {

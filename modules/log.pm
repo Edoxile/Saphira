@@ -34,7 +34,7 @@ sub init {
 
     $dbd = $self->{wrapper}->createDBD();
     foreach my $server (values %{$self->{wrapper}->{servers}}) {
-        $ps{$server->getServerName()} = 'INSERT INTO ' . $server->getServerName() . '_logs (type, when, who, raw_nick, channel, body, address) VALUES (?, NOW(), ?, ?, ?, ?, ?);';
+        $ps{$server->getServerName()} = $dbd->prepare('INSERT INTO ' . $server->getServerName() . '_logs (type, when, who, raw_nick, channel, body, address) VALUES (?, NOW(), ?, ?, ?, ?, ?);');
     }
 
     $self->registerHook('said', \&handleSaid);
@@ -56,7 +56,7 @@ sub isChannelLoggingEnabled {
 
 sub handleSaid {
     my ( $wrapper, $server, $message ) = @_;
-    return if ($message->{channel} eq 'msg');
+    return if ( $message->{channel} eq 'msg' or $message->{body} =~ m/^(!|qu?\/|sd?u?\/)/ );
     return unless isChannelLoggingEnabled($server, $message->{channel});
     $ps{$server->getServerName()}->execute('said', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
