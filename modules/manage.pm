@@ -62,7 +62,7 @@ sub init {
 
 sub getAuthLevel {
     my ( $server, $message ) = @_;
-    return 6 if $server->isChannelOperator( $message->{nick}, $message->{channel} );
+    return 6 if ( ( $message->{channel} ne 'msg' ) and $server->isChannelOperator( $message->{nick}, $message->{channel} ) );
     my $user = $server->getUser( $message->{raw_nick} );
     return 0 unless defined $user;
     return $user->getPermission( $message->{channel} );
