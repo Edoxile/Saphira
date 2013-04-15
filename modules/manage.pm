@@ -53,6 +53,7 @@ sub init {
     $self->registerHook( 'said',    \&handleSaidOp );
     $self->registerHook( 'said',    \&handleSaidDeop );
     $self->registerHook( 'said',    \&handleSaidSave );
+    $self->registerHook( 'said',    \&handleSaidLog );
     $self->registerHook( 'said',    \&handleSaidListOps );
     $self->registerHook( 'said',    \&handleSaidWhoami );
     $self->registerHook( 'invited', \&handleInvited );
@@ -123,7 +124,7 @@ sub handleSaidWhoami {
 sub handleSaidSave {
     my ( $wrapper, $server, $message ) = @_;
 
-    return unless ( $message->{channel} ne 'msg' and $message->{body} =~ m/^!save(?:\s([^ ]+))$/ );
+    return unless ( $message->{channel} ne 'msg' and $message->{body} =~ m/^!save$/ );
     return unless ( getAuthLevel( $server, $message ) gt 6 );
 
     my $chan = $server->getChannel( $message->{channel} );
