@@ -33,7 +33,7 @@ sub init {
     my ( $self, $message, $args ) = @_;
 
     $dbd = $self->{wrapper}->createDBD();
-    foreach my $server (values %{$wrapper->{servers}}) {
+    foreach my $server (values %{$self->{wrapper}->{servers}}) {
         $ps{$server->getName()} = 'INSERT INTO ' . $server->getName() . '_logs (type, when, who, raw_nick, channel, body, address) VALUES (?, NOW(), ?, ?, ?, ?, ?);';
     }
 
