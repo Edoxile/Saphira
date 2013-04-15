@@ -50,7 +50,7 @@ sub init {
 sub isChannelLoggingEnabled {
     my ($server, $channel) = @_;
     my $chan = $server->getChannel($channel);
-    return 0 unless defined $chan
+    return 0 unless defined $chan;
     return $chan->isLoggingEnabled();
 }
 
