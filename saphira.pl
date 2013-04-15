@@ -410,7 +410,7 @@ sub enableLogging {
     my $self = shift;
     return 0 if $self->{state} ne 1;
     return 0 if $self->{log};
-    else $self->{log} = 1;
+    $self->{log} = 1;
     my $ps = $self->handleQuery('update');
     if ( $ps->err ) {
         print '[E] MySQL error: ' . $ps->errstr . "\n";
