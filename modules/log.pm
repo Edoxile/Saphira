@@ -57,43 +57,43 @@ sub isChannelLoggingEnabled {
 sub handleSaid {
     my ( $wrapper, $server, $message ) = @_;
     return if ($message->{channel} eq 'msg');
-    return unless isChannelLoggingEnabled($server, $message->{$channel});
+    return unless isChannelLoggingEnabled($server, $message->{channel});
     $ps{$server->getName()}->execute('said', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleEmoted {
     my ( $wrapper, $server, $message ) = @_;
-    return unless isChannelLoggingEnabled($server, $message->{$channel});
+    return unless isChannelLoggingEnabled($server, $message->{channel});
     $ps{$server->getName()}->execute('emote', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleNoticed {
     my ( $wrapper, $server, $message ) = @_;
-    return unless isChannelLoggingEnabled($server, $message->{$channel});
+    return unless isChannelLoggingEnabled($server, $message->{channel});
     $ps{$server->getName()}->execute('notice', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleChanJoin {
     my ( $wrapper, $server, $message ) = @_;
-    return unless isChannelLoggingEnabled($server, $message->{$channel});
+    return unless isChannelLoggingEnabled($server, $message->{channel});
     $ps{$server->getName()}->execute('chanjoin', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleChanPart {
     my ( $wrapper, $server, $message ) = @_;
-    return unless isChannelLoggingEnabled($server, $message->{$channel});
+    return unless isChannelLoggingEnabled($server, $message->{channel});
     $ps{$server->getName()}->execute('chanpart', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleTopic {
     my ( $wrapper, $server, $message ) = @_;
-    return unless isChannelLoggingEnabled($server, $message->{$channel});
+    return unless isChannelLoggingEnabled($server, $message->{channel});
     $ps{$server->getName()}->execute('topic', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleKicked {
     my ( $wrapper, $server, $message ) = @_;
-    return unless isChannelLoggingEnabled($server, $message->{$channel});
+    return unless isChannelLoggingEnabled($server, $message->{channel});
     $ps{$server->getName()}->execute('kicked', $message->{who}, $message->{kicked}, $message->{channel}, $message->{reason}, undef);
 }
 
