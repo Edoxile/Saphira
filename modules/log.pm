@@ -58,12 +58,19 @@ sub handleSaid {
     my ( $wrapper, $server, $message ) = @_;
     return if ( $message->{channel} eq 'msg' or $message->{body} =~ m/^(!|qu?\/|sd?u?\/)/ );
     return unless isChannelLoggingEnabled($server, $message->{channel});
+    my $body = (($message->{real_who} ne $message->{who})? "<$message->{real_who}> " : '' ) . $message->{body};
     $ps{$server->getServerName()}->execute('said', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
 sub handleEmoted {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
+    if ( $message->{real_who} ne $message->{who} ) {
+        my $msg = $message;
+        $msg->{body} = "* $message->{real_who} $message->{body}";
+        handleSaid($wrapper, $server, $msg);
+        return;
+    }
     $ps{$server->getServerName()}->execute('emote', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
 }
 
