@@ -34,7 +34,7 @@ sub init {
 
     $dbd = $self->{wrapper}->createDBD();
     foreach my $server (values %{$self->{wrapper}->{servers}}) {
-        $ps{$server->getServerName()} = $dbd->prepare('INSERT INTO ' . $server->getServerName() . '_logs (type, posttime, who, raw_nick, channel, body, raw_body, address) values (?, NOW(), ?, ?, ?, ?, ?)');
+        $ps{$server->getServerName()} = $dbd->prepare('INSERT INTO ' . $server->getServerName() . '_logs (type, posttime, who, raw_nick, channel, body, raw_body, address) values (?, NOW(), ?, ?, ?, ?, ?, ?)');
     }
 
     $self->registerHook('said', \&handleSaid);
