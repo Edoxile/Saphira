@@ -59,7 +59,7 @@ sub handleSaid {
     return if ( $message->{channel} eq 'msg' or $message->{body} =~ m/^(!|qu?\/|sd?u?\/)/ );
     return unless isChannelLoggingEnabled($server, $message->{channel});
     my $body = (($message->{real_who} ne $message->{who})? "<$message->{real_who}> " : '' ) . $message->{body};
-    $ps{$server->getServerName()}->execute('said', $message->{who}, $message->{raw_nick}, $message->{channel}, $body, $message->{body_raw}, $message->{address});
+    $ps{$server->getServerName()}->execute('said', $message->{who}, $message->{raw_nick}, $message->{channel}, $body, $message->{raw_body}, $message->{address});
 }
 
 sub handleEmoted {

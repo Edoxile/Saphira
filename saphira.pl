@@ -93,7 +93,7 @@ sub new {
 sub said {
     return unless $_[1]->{who} ne $_[0]->nick();
     my $data = $_[1];
-    $data->{body_raw} = $data->{body};
+    $data->{raw_body} = $data->{body};
     $data->{body} =~ s/\cC\d{1,2}(?:,\d{1,2})?|[\cC\cB\cI\cU\cR\cO]//g;
     if ( $data->{body} =~ m/^\* ([\w\d_]+) (.+?)$/ ) {
         $data->{real_who} = $1;
