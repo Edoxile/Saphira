@@ -34,7 +34,7 @@ sub init {
 
     $dbd = $self->{wrapper}->createDBD();
     foreach my $server (values %{$self->{wrapper}->{servers}}) {
-        $ps{$server->getServerName()} = $dbd->prepare('INSERT INTO ' . $server->getServerName() . '_logs (type, posttime, who, raw_nick, channel, body, address) values (?, NOW(), ?, ?, ?, ?, ?)');
+        $ps{$server->getServerName()} = $dbd->prepare('INSERT INTO ' . $server->getServerName() . '_logs (type, posttime, who, raw_nick, channel, body, raw_body, address) values (?, NOW(), ?, ?, ?, ?, ?)');
     }
 
     $self->registerHook('said', \&handleSaid);
@@ -59,7 +59,7 @@ sub handleSaid {
     return if ( $message->{channel} eq 'msg' or $message->{body} =~ m/^(!|qu?\/|sd?u?\/)/ );
     return unless isChannelLoggingEnabled($server, $message->{channel});
     my $body = (($message->{real_who} ne $message->{who})? "<$message->{real_who}> " : '' ) . $message->{body};
-    $ps{$server->getServerName()}->execute('said', $message->{who}, $message->{raw_nick}, $message->{channel}, $body, $message->{address});
+    $ps{$server->getServerName()}->execute('said', $message->{who}, $message->{raw_nick}, $message->{channel}, $body, $message->{body_raw}, $message->{address});
 }
 
 sub handleEmoted {
@@ -71,43 +71,43 @@ sub handleEmoted {
         handleSaid($wrapper, $server, $msg);
         return;
     }
-    $ps{$server->getServerName()}->execute('emote', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('emote', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{body}, $message->{address});
 }
 
 sub handleNoticed {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getServerName()}->execute('notice', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('notice', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{body}, $message->{address});
 }
 
 sub handleChanJoin {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getServerName()}->execute('chanjoin', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('chanjoin', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{body}, $message->{address});
 }
 
 sub handleChanPart {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getServerName()}->execute('chanpart', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('chanpart', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{body}, $message->{address});
 }
 
 sub handleTopic {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getServerName()}->execute('topic', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{address});
+    $ps{$server->getServerName()}->execute('topic', $message->{who}, $message->{raw_nick}, $message->{channel}, $message->{body}, $message->{body}, $message->{address});
 }
 
 sub handleKicked {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getServerName()}->execute('kicked', $message->{who}, $message->{kicked}, $message->{channel}, $message->{reason}, undef);
+    $ps{$server->getServerName()}->execute('kicked', $message->{who}, $message->{kicked}, $message->{channel}, $message->{reason}, $message->{reason}, undef);
 }
 
 sub handleMode {
     my ( $wrapper, $server, $message ) = @_;
     return unless isChannelLoggingEnabled($server, $message->{channel});
-    $ps{$server->getServerName()}->execute('mode', undef, $message->{source}, $message->{channel}, ($message->{mode} . ' ' . $message->{args}), undef);
+    $ps{$server->getServerName()}->execute('mode', undef, $message->{source}, $message->{channel}, ($message->{mode} . ' ' . $message->{args}), ($message->{mode} . ' ' . $message->{args}), undef);
 }
 
 1;
