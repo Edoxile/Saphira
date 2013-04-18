@@ -823,6 +823,9 @@ sub createDBD {
 sub init {
     my $self = shift;
     
+    print "[I] Starting DBus...\n";
+    threads->create( 'startDBus', $self )->join();
+    
     my $ps   = $self->{dbd}->prepare(
         'select
             *
@@ -852,7 +855,7 @@ sub init {
             $self,             1
         );
         $self->{bots}->{ $result->{servername} } =
-          new Saphira::Bot( $self->{servers}->{ $result->{id} }, $self );
+          new Saphira::Bot( $self->{servers}->{ $result->{servername} }, $self );
         $self->{servers}->{ $result->{servername} }->_setBot( $self->{bots}->{ $result->{id} } );
         $self->{bots}->{ $result->{servername} }->_loadChannels();
         print
@@ -860,9 +863,6 @@ sub init {
           . join( ', ', $self->{bots}->{ $result->{servername} }->channels() ) . "}\n";
         threads->create( 'runThread', $self->{bots}->{ $result->{servername} } )->join();
     }
-    
-    print "[I] Starting DBus...\n";
-    threads->create( 'startDBus', $self )->join();
 
     return 1;
 }
