@@ -46,14 +46,14 @@ sub handleSaid {
     
     return if ( $message->{body} =~ m/^(sd?u?\/|qu?\/|!)/ or $message->{channel} eq 'msg' );
     
-    $buffer{$message->{channel}} = () if not defined $buffer{$message->{channel}};
+    $buffer{$server->getServerName . '-' . $message->{channel}} = () if not defined $buffer{$server->getServerName . '-' . $message->{channel}};
     my $msg = {};
     $msg->{channel} = $message->{channel};
     $msg->{who}     = $message->{real_who};
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 0;
-    unshift( @{$buffer{$message->{channel}}}, $msg );
-    $buffer{$message->{channel}} = [ splice ( @{$buffer{$message->{channel}}}, 0, 99 ) ];
+    unshift( @{$buffer{$server->getServerName . '-' . $message->{channel}}}, $msg );
+    $buffer{$server->getServerName . '-' . $message->{channel}} = [ splice ( @{$buffer{$server->getServerName . '-' . $message->{channel}}}, 0, 249 ) ];
 }
 
 sub handleEmoted {
@@ -61,14 +61,14 @@ sub handleEmoted {
     
     return if ( $message->{channel} eq 'msg' );
     
-    $buffer{$message->{channel}} = () if not defined $buffer{$message->{channel}};
+    $buffer{$server->getServerName . '-' . $message->{channel}} = () if not defined $buffer{$message->{channel}};
     my $msg = {};
     $msg->{channel} = $message->{channel};
     $msg->{who}     = $message->{real_who};
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 1;
-    unshift( @{$buffer{$message->{channel}}}, $msg );
-    $buffer{$message->{channel}} = [ splice( @{$buffer{$message->{channel}}}, 0, 99 ) ];
+    unshift( @{$buffer{$server->getServerName . '-' . $message->{channel}}}, $msg );
+    $buffer{$server->getServerName . '-' . $message->{channel}} = [ splice( @{$buffer{$server->getServerName . '-' . $message->{channel}}}, 0, 99 ) ];
 }
 
 sub handleSaidQuote {
@@ -79,7 +79,7 @@ sub handleSaidQuote {
     my $modifiers = $2 || '';
     my $caseInsensitive = ($modifiers =~ m/i/);
     
-    foreach my $msg (@{$buffer{$message->{channel}}}) {
+    foreach my $msg (@{$buffer{$server->getServerName . '-' . $message->{channel}}}) {
         if ( ( $msg->{message} =~ m/$search/ ) or ( $caseInsensitive and $msg->{message} =~ m/$search/i ) ) {
             $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $msg->{message}" : "<$msg->{who}> $msg->{message}" ), $message);
             last;
@@ -96,7 +96,7 @@ sub handleSaidSubstitute {
     my $modifiers = $3 || '';
     my $caseInsensitive = ($modifiers =~ m/i/);
     
-    foreach my $msg (@{$buffer{$message->{channel}}}) {
+    foreach my $msg (@{$buffer{$server->getServerName . '-' . $message->{channel}}}) {
         if ( ( $msg->{message} =~ m/$search/ ) or ( $caseInsensitive and $msg->{message} =~ m/$search/i ) ) {
             my $response = $msg->{message};
             eval("\$response =~ s/$search/$replace/$modifiers;");
@@ -115,7 +115,7 @@ sub handleSaidSwitch {
     my $modifiers = $3 || '';
     my $caseInsensitive = ($modifiers =~ m/i/);
     
-    foreach my $msg (@{$buffer{$message->{channel}}}) {
+    foreach my $msg (@{$buffer{$server->getServerName . '-' . $message->{channel}}}) {
         my $response = $msg->{message};
         if ( $msg->{message} =~ m/$word1/ and $msg->{message} =~ m/$word2/ ){
             $response =~ s/\Q$word1\E/\x1A/g;
@@ -143,7 +143,7 @@ sub handleSaidQuoteUser {
     my $modifiers = $3 || '';
     my $caseInsensitive = ($modifiers =~ m/i/);
     
-    foreach my $msg (@{$buffer{$message->{channel}}}) {
+    foreach my $msg (@{$buffer{$server->getServerName . '-' . $message->{channel}}}) {
         if ( $msg->{who} =~ m/^$who/i and ( ( $msg->{message} =~ m/$search/ ) or ( $caseInsensitive and $msg->{message} =~ m/$search/i ) ) ) {
             $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $msg->{message}" : "<$msg->{who}> $msg->{message}" ), $message);
             last;
@@ -161,7 +161,7 @@ sub handleSaidSubstituteUser {
     my $modifiers = $4 || '';
     my $caseInsensitive = ($modifiers =~ m/i/);
     
-    foreach my $msg (@{$buffer{$message->{channel}}}) {
+    foreach my $msg (@{$server->getServerName . '-' . $buffer{$message->{channel}}}) {
         if ( $msg->{who} =~ m/^$who/i and ( ( $msg->{message} =~ m/$search/ ) or ( $caseInsensitive and $msg->{message} =~ m/$search/i ) ) ) {
             my $response = $msg->{message};
             eval("\$response =~ s/$search/$replace/$modifiers;");

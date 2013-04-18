@@ -285,6 +285,35 @@ sub _loadChannels {
 
 1;
 
+package Saphira::API::DBus;
+
+use base qw(Net::DBus::Object);
+use Net::DBus::Exporter qw(net.edoxile.Saphira.Interface);
+
+my $wrapper;
+
+sub new {
+    my $class = shift;
+    my $service = shift;
+    $wrapper = shift;
+    my $self = $class->SUPER::new($service, "/net/edoxile/Saphira/Object");
+    bless $self, $class;
+    return $self;
+}
+
+sub say {
+    my ($self, $server, $channel, $body)=@_;
+    print "The 'say' method was called in 'saphira.pl' saying: [server: $server, channel: $channel; body: $body].\n";
+    return -1 unless defined $wrapper->{servers}->{$server};
+    return 0 unless defined $wrapper->{servers}->{$server}->getChannel($channel);
+    $wrapper->{servers}->{$server}->{bot}->say({channel => $channel, body => '[web] ' . $body});
+    return 1;
+}
+
+dbus_method('say', ['string', 'string', 'string'], ['int32']);
+
+1;
+
 package Saphira::Module;
 use warnings;
 use strict;
@@ -746,6 +775,9 @@ use threads(
     'exit'       => 'threads_only',
     'stringify'
 );
+use Net::DBus;
+use Net::DBus::Service;
+use Net::DBus::Reactor;
 
 sub new {
     my $class = shift;
@@ -790,6 +822,11 @@ sub createDBD {
 
 sub init {
     my $self = shift;
+    
+    print "[I] Starting DBus...\n";
+    threads->create( 'startDBus', $self )->join();
+    
+    
     my $ps   = $self->{dbd}->prepare(
         'select
             *
@@ -813,12 +850,12 @@ sub init {
     }
 
     while ( my $result = $ps->fetchrow_hashref() ) {
-        $self->{servers}->{ $result->{id} } = new Saphira::API::Server(
+        $self->{servers}->{ $result->{servername} } = new Saphira::API::Server(
             $result->{id},     $result->{servername}, $result->{address},  $result->{port},
             $result->{secure}, $result->{username},   $result->{password}, $result->{nickservpassword},
             $self,             1
         );
-        $self->{bots}->{ $result->{id} } =
+        $self->{bots}->{ $result->{servername} } =
           new Saphira::Bot( $self->{servers}->{ $result->{id} }, $self );
         $self->{servers}->{ $result->{id} }->_setBot( $self->{bots}->{ $result->{id} } );
         $self->{bots}->{ $result->{id} }->_loadChannels();
@@ -831,13 +868,21 @@ sub init {
     return 1;
 }
 
+sub startDBus {
+    my $self = shift;
+    my $bus = Net::DBus->session();
+    my $service = $bus->export_service("net.edoxile.Saphira.Service");
+    my $object = Saphira::API::DBus->new($service, $self);
+    Net::DBus::Reactor->main->run();
+}
+
 sub runThread {
     $_[0]->run();
 }
 
 sub getServer {
-    my ( $self, $id ) = @_;
-    return $self->{servers}->{$id};
+    my ( $self, $name ) = @_;
+    return $self->{servers}->{$name};
 }
 
 sub removeServer {

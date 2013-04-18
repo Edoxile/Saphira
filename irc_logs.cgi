@@ -44,7 +44,7 @@ my $dbd = DBI->connect(
 $dbd->do('SET NAMES utf8');
 my $parser = JSON::XS->new->ascii->allow_nonref;
 
-my $ps = $dbd->prepare("SELECT type,DATE_FORMAT(posttime,'%d/%c/%Y %H:%i:%s') as posttime,who,raw_body FROM Tweakers_logs WHERE channel = ? ORDER BY posttime DESC LIMIT 30");
+my $ps = $dbd->prepare("SELECT type,DATE_FORMAT(posttime,'%d/%c/%Y %H:%i:%s') as posttime,who,raw_body FROM Tweakers_logs WHERE channel = ? ORDER BY posttime DESC LIMIT 100");
 $ps->execute( '#' . $channel );
 if ( $ps->err ) {
     print "MySQL error: $ps->errno\n";
@@ -59,7 +59,7 @@ while (my ($key, $value) = each $data ) {
 
 my $output = $parser->encode($data);
 
-print "$output\n";
+print "{\"logs\":$output}\n";
 
 1;
 __END__;
