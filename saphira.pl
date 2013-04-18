@@ -823,7 +823,7 @@ sub createDBD {
 sub init {
     my $self = shift;
     
-    my $dbus = threads->create( 'startDBus', $self );
+    my $dbus = threads->new(sub{$self->startDBus;});
     
     my $ps   = $self->{dbd}->prepare(
         'select
