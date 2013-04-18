@@ -164,6 +164,20 @@ sub nick_change {
     return;
 }
 
+sub tick {
+    my $self = shift;
+    my $ps = $self->{wrapper}->createDBD()->prepare('SELECT channel,body FROM webinterface WHERE server = ?');
+    $ps->execute($self->{serv}->getServerName());
+    if ( $ps->err ) {
+        print "[E] MySQL error: $ps->error\n";
+    } else {
+        while( my $message = $ps->fetchrow_hashref() ) {
+            $self->say({ body => '[web] ' . $message->{body}, channel => $message->{channel}});
+        }
+    }
+    return 1;
+}
+
 sub help { return $botinfo; }
 
 sub init {
@@ -282,35 +296,6 @@ sub _loadChannels {
     }
     $self->channels(@channels);
 }
-
-1;
-
-package Saphira::API::DBus;
-
-use base qw(Net::DBus::Object);
-use Net::DBus::Exporter qw(net.edoxile.Saphira.Interface);
-
-my $wrapper;
-
-sub new {
-    my $class = shift;
-    my $service = shift;
-    $wrapper = shift;
-    my $self = $class->SUPER::new($service, "/net/edoxile/Saphira/Object");
-    bless $self, $class;
-    return $self;
-}
-
-sub bot_say {
-    my ($self, $server, $channel, $body)=@_;
-    print "The 'say' method was called in 'saphira.pl' saying: [server: $server, channel: $channel; body: $body].\n";
-    return -1 unless defined $wrapper->{servers}->{$server};
-    return 0 unless defined $wrapper->{servers}->{$server}->getChannel($channel);
-    $wrapper->{servers}->{$server}->{bot}->say({channel => $channel, body => '[web] ' . $body});
-    return 1;
-}
-
-dbus_method('bot_say', ['string', 'string', 'string'], ['int32']);
 
 1;
 
@@ -775,9 +760,6 @@ use threads(
     'exit'       => 'threads_only',
     'stringify'
 );
-use Net::DBus;
-use Net::DBus::Service;
-use Net::DBus::Reactor;
 
 sub new {
     my $class = shift;
@@ -823,9 +805,6 @@ sub createDBD {
 sub init {
     my $self = shift;
     
-    #print "[I] Starting DBus...\n";
-    #threads->create( 'runDBus', $self )->join();
-    
     my $ps   = $self->{dbd}->prepare(
         'select
             *
@@ -862,23 +841,9 @@ sub init {
 "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}] {"
           . join( ', ', $self->{bots}->{ $result->{servername} }->channels() ) . "}\n";
         threads->create( 'runThread', $self->{bots}->{ $result->{servername} } )->join();
-        print "Potatoe\n";
     }
 
     return 1;
-}
-
-sub runDBus {
-    my $self = shift;
-    print "1\n";
-    my $bus = Net::DBus->session();
-    print "2\n";
-    my $service = $bus->export_service("net.edoxile.Saphira.Service");
-    print "3\n";
-    my $object = Saphira::API::DBus->new($service, $self);
-    print "4\n";
-    Net::DBus::Reactor->main->run();
-    print "5\n";
 }
 
 sub runThread {
