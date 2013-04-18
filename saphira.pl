@@ -301,7 +301,7 @@ sub new {
     return $self;
 }
 
-sub say {
+sub bot_say {
     my ($self, $server, $channel, $body)=@_;
     print "The 'say' method was called in 'saphira.pl' saying: [server: $server, channel: $channel; body: $body].\n";
     return -1 unless defined $wrapper->{servers}->{$server};
@@ -310,7 +310,7 @@ sub say {
     return 1;
 }
 
-dbus_method('say', ['string', 'string', 'string'], ['int32']);
+dbus_method('bot_say', ['string', 'string', 'string'], ['int32']);
 
 1;
 
@@ -823,10 +823,6 @@ sub createDBD {
 sub init {
     my $self = shift;
     
-    print "[I] Starting DBus...\n";
-    threads->create( 'startDBus', $self )->join();
-    
-    
     my $ps   = $self->{dbd}->prepare(
         'select
             *
@@ -857,13 +853,16 @@ sub init {
         );
         $self->{bots}->{ $result->{servername} } =
           new Saphira::Bot( $self->{servers}->{ $result->{id} }, $self );
-        $self->{servers}->{ $result->{id} }->_setBot( $self->{bots}->{ $result->{id} } );
-        $self->{bots}->{ $result->{id} }->_loadChannels();
+        $self->{servers}->{ $result->{servername} }->_setBot( $self->{bots}->{ $result->{id} } );
+        $self->{bots}->{ $result->{servername} }->_loadChannels();
         print
 "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}] {"
-          . join( ', ', $self->{bots}->{ $result->{id} }->channels() ) . "}\n";
-        threads->create( 'runThread', $self->{bots}->{ $result->{id} } )->join();
+          . join( ', ', $self->{bots}->{ $result->{servername} }->channels() ) . "}\n";
+        threads->create( 'runThread', $self->{bots}->{ $result->{servername} } )->join();
     }
+    
+    print "[I] Starting DBus...\n";
+    threads->create( 'startDBus', $self )->join();
 
     return 1;
 }
