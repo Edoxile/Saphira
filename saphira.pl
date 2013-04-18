@@ -823,7 +823,8 @@ sub createDBD {
 sub init {
     my $self = shift;
     
-    my $dbus = threads->create( 'runDBus', $self );
+    print "[I] Starting DBus...\n";
+    my $dbus = threads->new( sub{ $self->runDBus; } )->join();
     
     my $ps   = $self->{dbd}->prepare(
         'select
@@ -862,9 +863,6 @@ sub init {
           . join( ', ', $self->{bots}->{ $result->{servername} }->channels() ) . "}\n";
         threads->create( 'runThread', $self->{bots}->{ $result->{servername} } )->join();
     }
-    
-    print "[I] Starting DBus...\n";
-    $dbus->join();
 
     return 1;
 }
