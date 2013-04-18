@@ -856,12 +856,13 @@ sub init {
         );
         $self->{bots}->{ $result->{servername} } =
           new Saphira::Bot( $self->{servers}->{ $result->{servername} }, $self );
-        $self->{servers}->{ $result->{servername} }->_setBot( $self->{bots}->{ $result->{id} } );
+        $self->{servers}->{ $result->{servername} }->_setBot( $self->{bots}->{ $result->{servername} } );
         $self->{bots}->{ $result->{servername} }->_loadChannels();
         print
 "[I] Connecting to server $result->{servername} [host:$result->{address}, port:$result->{port}, ssl:$result->{secure}] {"
           . join( ', ', $self->{bots}->{ $result->{servername} }->channels() ) . "}\n";
         threads->create( 'runThread', $self->{bots}->{ $result->{servername} } )->join();
+        print "Potatoe\n";
     }
 
     return 1;
