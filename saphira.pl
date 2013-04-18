@@ -823,8 +823,7 @@ sub createDBD {
 sub init {
     my $self = shift;
     
-    print '[I] Starting DBus...';
-    threads->create( 'runDBus', $self )->join();
+    my $dbus = threads->create( 'runDBus', $self );
     
     my $ps   = $self->{dbd}->prepare(
         'select
@@ -865,7 +864,7 @@ sub init {
     }
     
     print "[I] Starting DBus...\n";
-    
+    $dbus->join();
 
     return 1;
 }
