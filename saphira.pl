@@ -823,8 +823,8 @@ sub createDBD {
 sub init {
     my $self = shift;
     
-    print "[I] Starting DBus...\n";
-    my $dbus = threads->new( sub{ $self->runDBus; } )->join();
+    #print "[I] Starting DBus...\n";
+    #threads->create( 'runDBus', $self )->join();
     
     my $ps   = $self->{dbd}->prepare(
         'select
@@ -869,10 +869,15 @@ sub init {
 
 sub runDBus {
     my $self = shift;
+    print "1\n";
     my $bus = Net::DBus->session();
+    print "2\n";
     my $service = $bus->export_service("net.edoxile.Saphira.Service");
+    print "3\n";
     my $object = Saphira::API::DBus->new($service, $self);
+    print "4\n";
     Net::DBus::Reactor->main->run();
+    print "5\n";
 }
 
 sub runThread {
