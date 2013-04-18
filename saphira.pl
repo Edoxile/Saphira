@@ -166,16 +166,18 @@ sub nick_change {
 
 sub tick {
     my $self = shift;
-    my $ps = $self->{wrapper}->createDBD()->prepare('SELECT channel,body FROM webinterface WHERE server = ?');
+    my $dbd = $self->{wrapper}->createDBD();
+    my $ps = $dbd->prepare('SELECT id,channel,body FROM webinterface WHERE server = ?');
     $ps->execute($self->{serv}->getServerName());
     if ( $ps->err ) {
         print "[E] MySQL error: $ps->error\n";
     } else {
         while( my $message = $ps->fetchrow_hashref() ) {
             $self->say({ body => '[web] ' . $message->{body}, channel => $message->{channel}});
+            $dbd->do("DELETE FROM webinterface WHERE id = '$message->{id}'");
         }
     }
-    return 1;
+    return 2;
 }
 
 sub help { return $botinfo; }
