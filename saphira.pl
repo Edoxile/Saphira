@@ -823,6 +823,9 @@ sub createDBD {
 sub init {
     my $self = shift;
     
+    print '[I] Starting DBus...';
+    threads->create( 'runDBus', $self )->join();
+    
     my $ps   = $self->{dbd}->prepare(
         'select
             *
@@ -863,12 +866,16 @@ sub init {
     
     print "[I] Starting DBus...\n";
     
+
+    return 1;
+}
+
+sub runDBus {
+    my $self = shift;
     my $bus = Net::DBus->session();
     my $service = $bus->export_service("net.edoxile.Saphira.Service");
     my $object = Saphira::API::DBus->new($service, $self);
     Net::DBus::Reactor->main->run();
-
-    return 1;
 }
 
 sub runThread {
