@@ -100,3 +100,5 @@ sub handleSaidBrainfuck {
     my $msg = $message->{real_who} . ': ' . ( ( defined $output ) ? $output : 'Interpreter returned nothing. Invalid syntax?' );
     $server->{bot}->reply($msg, $message);
 }
+
+1;
