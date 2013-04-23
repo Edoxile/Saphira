@@ -99,13 +99,12 @@ sub init {
 
 sub handleSaidBrainfuck {
     my ( $wrapper, $server, $message ) = @_;
-    return unless ( $message->{body} =~ m/^!bfq? ([\[\]\.\+\-<>,]+)(?: (.+?))?/ );
+    return unless ( $message->{body} =~ m/^!bfq? ([\[\]\.\+\-<>,]+)(?: (.+?))?$/ );
     my $script = $1;
     my $input = $2 || '';
     print '>> Running brainfuck ' . ( $input ? 'with' : 'without' ) . " input, called by $message->{who} ( $message->{real_who} )\n";
     my $brainfuck = new Interpreter::Brainfuck($script, $input);
     my $output = $brainfuck->get_output();
-    print ">> BF: [ $input ] returned $output\n";
     my $msg = $message->{real_who} . ': ' . ( ( defined $output and $output ne '' ) ? $output : 'Interpreter returned nothing. Invalid syntax?' );
     $server->{bot}->reply($msg, $message);
 }
