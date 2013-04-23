@@ -26,16 +26,21 @@ use Switch;
 sub new {
     my $class = shift;
     my $self = bless {
-        script => [ split('', shift) ],
-        input => [ split('', shift) ],
-        output => undef
+        raw_script => shift,
+        raw_input => shift,
+        output => ''
     }, $class;
+    
+    $self->{script} = [ split '', $self->{raw_script} ];
+    $self->{input} = [ split '', $self->{raw_input} ];
+    
     return $self;
 }
 
 sub run {
-    my ( $self, $ip, $sp, $inp, $size, $stacks )  = ( shift, 0, 0, 0, scalar @{$self->{script}}, () );
-    while ( $ip < scalar @{$self->{script}} ) {
+    my ( $self, $ip, $sp, $inp )  = ( shift, 0, 0, 0 );
+    my @stacks = ();
+    while ( $ip < scalar ( @{$self->{script}} ) ) {
         switch ( @{$self->{script}}[$ip] ) {
             case '+' { $stacks[$sp]++; }
             case '-' { $stacks[$sp]--; }
@@ -44,7 +49,7 @@ sub run {
             case '[' { $ip = $self->find_loop_end($ip) if $stacks[$sp] eq 0; return undef if not defined $ip; }
             case ']' { $ip = $self->find_loop_start($ip) if $stacks[$sp] ne 0; return undef if not defined $ip; }
             case '.' { $self->{output} .= chr ( $stacks[$sp] ); }
-            case ',' { $stacks[$sp] = @{$self->{input}}[$inp]; $inp++; }
+            case ',' { $stacks[$sp] = ($inp < ( scalar @{$self->{input}} ) ) ? ord ( @{$self->{input}}[$inp++] ) : 0 ; }
         }
         $ip++;
     }
@@ -53,7 +58,8 @@ sub run {
 
 sub find_loop_start {
     my ($self, $ip) = @_;
-    my ($opens, @part) = ( 0, reverse @{$self->{script}}[0 .. $ip] );
+    my $opens = 0;
+    my @part = reverse @{$self->{script}}[0 .. $ip];
     foreach ( keys @part ) {
         $opens++ if $part[$_] eq ']';
         $opens-- if $part[$_] eq '[';
@@ -64,7 +70,8 @@ sub find_loop_start {
 
 sub find_loop_end {
     my ($self, $ip) = @_;
-    my ($opens, @part) = ( 0, @{$self->{script}}[$ip .. scalar(@{$self->{script}})] );
+    my $opens = 0;
+    my @part = @{$self->{script}}[$ip .. scalar(@{$self->{script}})];
     foreach ( keys @part ) {
         $opens++ if $part[$_] eq '[';
         $opens-- if $part[$_] eq ']';
@@ -75,7 +82,7 @@ sub find_loop_end {
 
 sub get_output {
     my $self = shift;
-    $self->run if not defined $self->{output};
+    $self->run() if $self->{output} eq '';
     return $self->{output};
 }
 
@@ -95,6 +102,7 @@ sub handleSaidBrainfuck {
     return unless ( $message->{body} =~ m/^!bfq? ([\[\]\.\+\-<>,]+)(?: (.+?))?/ );
     my $script = $1;
     my $input = $2 || '';
+    print '>> Running brainfuck ' . ( $input ? 'with' : 'without' ) . " input, called by $message->{who} ( $message->{real_who} )\n";
     my $brainfuck = new Interpreter::Brainfuck($script, $input);
     my $output = $brainfuck->run();
     my $msg = $message->{real_who} . ': ' . ( ( defined $output ) ? $output : 'Interpreter returned nothing. Invalid syntax?' );
