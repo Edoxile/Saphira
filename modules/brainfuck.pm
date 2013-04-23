@@ -104,7 +104,7 @@ sub handleSaidBrainfuck {
     my $input = $2 || '';
     print '>> Running brainfuck ' . ( $input ? 'with' : 'without' ) . " input, called by $message->{who} ( $message->{real_who} )\n";
     my $brainfuck = new Interpreter::Brainfuck($script, $input);
-    my $output = $brainfuck->run();
+    my $output = $brainfuck->get_output();
     my $msg = $message->{real_who} . ': ' . ( ( defined $output ) ? $output : 'Interpreter returned nothing. Invalid syntax?' );
     $server->{bot}->reply($msg, $message);
 }
