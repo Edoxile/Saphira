@@ -163,7 +163,7 @@ sub handleSaidBrainify {
     
     my $msg = $message->{real_who} . ": $brainfuck";
     
-    if ( $message->{channel} ne 'msg' and length ( $brainfuck ) gt 200 ) {
+    if ( ( $message->{channel} ne 'msg' ) and ( length ( $brainfuck ) gt 200 ) ) {
        $msg = "I'm sorry $message->{real_who}, but your program is to long and to prevent spam I can't post it. You could ask me in a private message though!";
     }
     
