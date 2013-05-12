@@ -79,6 +79,7 @@ sub new {
     $self->port( int( $self->{serv}->{port} ) );
     $self->ssl( $self->{serv}->{secure} );
     $self->nick( $self->{serv}->{username} );
+    $self->password( $self->{serv}->{password} ) if defined $self->{serv}->{password};
 
     $self->alt_nicks( ["PerlBot"] );
     $self->username('Saphira');
