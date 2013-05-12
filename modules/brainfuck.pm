@@ -95,6 +95,7 @@ use strict;
 sub init {
     my ( $self, $message, $args ) = @_;
     $self->registerHook( 'said', \&handleSaidBrainfuck );
+    $self->registerHook( 'said', \&handleSaidBrainify );
 }
 
 sub handleSaidBrainfuck {
@@ -106,6 +107,66 @@ sub handleSaidBrainfuck {
     my $brainfuck = new Interpreter::Brainfuck($script, $input);
     my $output = $brainfuck->get_output();
     my $msg = $message->{real_who} . ': ' . ( ( defined $output and $output ne '' ) ? $output : 'Interpreter returned nothing. Invalid syntax?' );
+    $server->{bot}->reply($msg, $message);
+}
+
+sub handleSaidBrainify {
+    my ( $wrapper, $server, $message ) = @_;
+    return unless ( $message->{body} =~ m/^!b(?:raini)?fy (.+?)$/ );
+    
+    my $input = $1;
+    
+    my $brainfuck = '';
+    my $array_initializer = '';
+    my $total_stacks = 0;
+    my @stacks = ();
+    my $stackPointer = 0;
+    my $lookupPointer = -1;
+
+    my @text = split '', $input;
+    foreach my $char (@text) {
+        my $ord = ord $char;
+        while(my ($key,$value) = each(@stacks)) {
+            if ( abs($value - $ord) <= 4 ) {
+                if ( $lookupPointer == -1 ) {
+                    $lookupPointer = $key;
+                } elsif ( abs($stacks[$lookupPointer] - $ord) > abs($value - $ord) ) {
+                    $lookupPointer = $key;
+                }
+            }
+        }
+        if ($lookupPointer lt 0) {
+            $total_stacks++;
+            my $plusses = int ( $ord / 8 );
+            my $leftover = $ord % 8;
+            my $sign = '+';
+            if ($leftover gt 4) {
+                $plusses++;
+                $leftover = 8 - $leftover;
+                $sign = '-';
+            }
+            $array_initializer .= '>' . ('+' x $plusses);
+            my $stackdiff = scalar(@stacks) - $stackPointer;
+            $brainfuck .= '>' x $stackdiff . $sign x $leftover . '.';
+            push @stacks, $ord;
+            $stackPointer = scalar(@stacks) - 1;
+        } else {
+            my $stackdiff = $lookupPointer - $stackPointer;
+            my $leftover = $ord - $stacks[$lookupPointer];
+            $brainfuck .= (($stackdiff gt 0?'>':'<')x abs($stackdiff)) . (($leftover lt 0?'-':'+') x abs($leftover)) . '.';
+            $stackPointer = $lookupPointer;
+            $stacks[$stackPointer] = $ord;
+        }
+        $lookupPointer = -1;
+    }
+    $brainfuck = '++++++++[' . $array_initializer . ('<'x$total_stacks) . '-]>' . $brainfuck;
+    
+    my $msg = $message->{real_who} . ": $brainfuck";
+    
+    if ( ( $message->{channel} ne 'msg' ) and ( length ( $brainfuck ) > 250 ) ) {
+       $msg = "I'm sorry $message->{real_who}, but your program is too long [".length($brainfuck)."] and to prevent spam I can't post it. You could ask me in a private message though!";
+    }
+    
     $server->{bot}->reply($msg, $message);
 }
 

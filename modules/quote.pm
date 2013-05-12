@@ -161,7 +161,7 @@ sub handleSaidSubstituteUser {
     my $modifiers = $4 || '';
     my $caseInsensitive = ($modifiers =~ m/i/);
     
-    foreach my $msg (@{$server->getServerName . '-' . $buffer{$message->{channel}}}) {
+    foreach my $msg (@{$buffer{$server->getServerName . '-' . $message->{channel}}}) {
         if ( $msg->{who} =~ m/^$who/i and ( ( $msg->{message} =~ m/$search/ ) or ( $caseInsensitive and $msg->{message} =~ m/$search/i ) ) ) {
             my $response = $msg->{message};
             eval("\$response =~ s/$search/$replace/$modifiers;");
