@@ -58,6 +58,8 @@ END {
 package Saphira::Bot;
 use base 'Bot::BasicBot';
 use POE;
+use strict;
+use warnings;
 
 my $version = '2.0.0';
 my $botinfo =
@@ -79,7 +81,7 @@ sub new {
     $self->port( int( $self->{serv}->{port} ) );
     $self->ssl( $self->{serv}->{secure} );
     $self->nick( $self->{serv}->{username} );
-    $self->password( $self->{serv}->{password} ) if defined $self->{serv}->{password};
+    #$self->password( $self->{serv}->{password} ) if defined $self->{serv}->{password};
 
     $self->alt_nicks( ["PerlBot"] );
     $self->username('Saphira');
@@ -88,6 +90,8 @@ sub new {
 
     $self->init or die "init did not return a true value - dying";
 
+    print '>> Connecting to address: ' . $self->server() . "\n";
+    
     return $self;
 }
 

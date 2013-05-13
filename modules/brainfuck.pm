@@ -42,8 +42,8 @@ sub run {
     my @stacks = ();
     while ( $ip < scalar ( @{$self->{script}} ) ) {
         switch ( @{$self->{script}}[$ip] ) {
-            case '+' { $stacks[$sp]++; return undef if $stacks[$sp] gt 255; }
-            case '-' { $stacks[$sp]--; return undef if $stacks[$sp] lt 0; }
+            case '+' { $stacks[$sp]++; return undef if $stacks[$sp] > 255; }
+            case '-' { $stacks[$sp]--; return undef if $stacks[$sp] < 0; }
             case '>' { $sp++; }
             case '<' { $sp--; return undef if $sp lt 0 }
             case '[' { $ip = $self->find_loop_end($ip) if $stacks[$sp] eq 0; return undef if not defined $ip; }
