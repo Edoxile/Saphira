@@ -44,8 +44,8 @@ sub run {
         switch ( @{$self->{script}}[$ip] ) {
             case '+' { $stacks[$sp]++; return undef if $stacks[$sp] > 255; }
             case '-' { $stacks[$sp]--; return undef if $stacks[$sp] < 0; }
-            case '>' { $sp++; }
-            case '<' { $sp--; return undef if $sp lt 0 }
+            case '>' { $sp++; return undef if $sp > 32 }
+            case '<' { $sp--; return undef if $sp < 0 }
             case '[' { $ip = $self->find_loop_end($ip) if $stacks[$sp] eq 0; return undef if not defined $ip; }
             case ']' { $ip = $self->find_loop_start($ip) if $stacks[$sp] ne 0; return undef if not defined $ip; }
             case '.' { $self->{output} .= chr ( $stacks[$sp] ); }
