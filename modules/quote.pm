@@ -27,7 +27,7 @@ no warnings 'redefine';
 use strict;
 
 my %buffer = {};
-my @colors = ( 05, 04, 07, 08, 03, 09, 10, 11, 02, 12, 06, 13 );
+my @colors = ( '05', '04', '07', '08', '03', '09', '10', '11', '02', '12', '06', '13' );
 
 sub init {
     my ( $self, $message, $args ) = @_;
@@ -183,7 +183,7 @@ sub handleSaidRainbow {
     
     foreach my $msg (@{$buffer{$server->getServerName . '-' . $message->{channel}}}) {
         if ( ( $msg->{message} =~ m/$search/ ) or ( $caseInsensitive and $msg->{message} =~ m/$search/i ) ) {
-            my $rainbow = $self->makeRainbow( $msg->{message}, $modifiers );
+            my $rainbow = makeRainbow( $msg->{message}, $modifiers );
             $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $rainbow" : "<$msg->{who}> $rainbow" ), $message);
             last;
         }
@@ -206,6 +206,7 @@ sub makeRainbow {
             $output .= $char;
         }
     }
+    return $output;
 }
 
 1;
