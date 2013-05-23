@@ -46,7 +46,7 @@ sub init {
 sub handleSaid {
     my ( $wrapper, $server, $message ) = @_;
     
-    return if ( $message->{body} =~ m/^(sd?u?\/|qu?\/|!)/ or $message->{channel} eq 'msg' );
+    return if ( $message->{body} =~ m/^(sd?u?\/|qu?\/|r\/|!)/ or $message->{channel} eq 'msg' );
     
     $buffer{$server->getServerName . '-' . $message->{channel}} = () if not defined $buffer{$server->getServerName . '-' . $message->{channel}};
     my $msg = {};
