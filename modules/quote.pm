@@ -191,7 +191,7 @@ sub handleSaidRainbow {
 }
 
 sub makeRainbow {
-    my ( $self, $input, $flags ) = @_;
+    my ( $input, $flags ) = @_;
     my $background = ( $flags =~ m/b/ );
     my $bg = scalar ( @colors ) - 1;
     my $fg = 0;
