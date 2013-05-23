@@ -27,6 +27,7 @@ no warnings 'redefine';
 use strict;
 
 my %buffer = {};
+my @colors = ( 05, 04, 07, 08, 03, 09, 10, 11, 02, 12, 06, 13 );
 
 sub init {
     my ( $self, $message, $args ) = @_;
@@ -167,6 +168,41 @@ sub handleSaidSubstituteUser {
             eval("\$response =~ s/$search/$replace/$modifiers;");
             $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $response" : "<$msg->{who}> $response" ), $message);
             last;
+        }
+    }
+}
+
+sub handleSaidRainbow {
+    my ( $wrapper, $server, $message ) = @_;
+    
+    return unless ( $message->{body} =~ m/^r\/(.+?)\/(\w+)?/ );
+    my $search = $1;
+    my $modifiers = $2 || '';
+    my $caseInsensitive = ($modifiers =~ m/i/);
+    
+    foreach my $msg (@{$buffer{$server->getServerName . '-' . $message->{channel}}}) {
+        if ( ( $msg->{message} =~ m/$search/ ) or ( $caseInsensitive and $msg->{message} =~ m/$search/i ) ) {
+            my $rainbow = $self->makeRainbow( $msg->{message}, $modifiers );
+            $server->{bot}->reply( ( $msg->{emoted} ? "* $msg->{who} $rainbow" : "<$msg->{who}> $rainbow" ), $message);
+            last;
+        }
+    }
+}
+
+sub makeRainbow {
+    my ( $self, $input, $flags ) = @_;
+    my $background = ( $flags =~ m/b/ );
+    my $bg = scalar ( @colors ) - 1;
+    my $fg = 0;
+    my $output = '';
+    my @in = split( '',$input );
+    foreach my $char (@in) {
+        if ( $char =~ m/\S/ ) {
+            $output .= "\x03" . $colors[$fg] . ( $background ? ( ',' . $colors[$bg] . $char ) : $char );
+            $fg = ++$fg % ( scalar (@colors) );
+            $bg = ( --$bg >= 0 ? $bg : scalar ( @colors ) - 1 );
+        } else {
+            $output .= $char;
         }
     }
 }
