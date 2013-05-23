@@ -40,6 +40,7 @@ sub init {
     $self->registerHook('said', \&handleSaidQuoteUser);
     $self->registerHook('said', \&handleSaidSubstituteUser);
     $self->registerHook('said', \&handleSaidSwitch);
+    $self->registerHook('said', \&handleSaidRainbow);
 }
 
 sub handleSaid {
