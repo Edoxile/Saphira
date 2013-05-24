@@ -27,7 +27,7 @@ no warnings 'redefine';
 use strict;
 
 my %buffer = {};
-my @colors = ( '05', '04', '07', '08', '03', '09', '10', '11', '02', '12', '06', '13' );
+my @colors = ( '05', '04', '07', '08', '03', '09', '10', '11', '12', '02', '06', '13' );
 
 sub init {
     my ( $self, $message, $args ) = @_;
@@ -193,7 +193,8 @@ sub handleSaidRainbow {
 sub makeRainbow {
     my ( $input, $flags ) = @_;
     my $background = ( $flags =~ m/b/ );
-    my $bg = scalar ( @colors ) - 1;
+    #my $bg = scalar ( @colors ) - 1;
+    my $bg = 6;
     my $fg = 0;
     my $output = '';
     my @in = split( '',$input );
@@ -201,7 +202,8 @@ sub makeRainbow {
         if ( $char =~ m/\S/ ) {
             $output .= "\x03" . $colors[$fg] . ( $background ? ( ',' . $colors[$bg] . $char ) : $char );
             $fg = ++$fg % ( scalar (@colors) );
-            $bg = ( --$bg >= 0 ? $bg : scalar ( @colors ) - 1 );
+            $bg = ++$bg % ( scalar (@colors) );
+            #$bg = ( --$bg >= 0 ? $bg : scalar ( @colors ) - 1 );
         } else {
             $output .= $char;
         }
