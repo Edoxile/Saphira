@@ -63,14 +63,14 @@ sub handleEmoted {
     
     return if ( $message->{channel} eq 'msg' );
     
-    $buffer{$server->getServerName . '-' . $message->{channel}} = () if not defined $buffer{$message->{channel}};
+    $buffer{$server->getServerName . '-' . $message->{channel}} = () if not defined $buffer{$server->getServerName . '-' . $message->{channel}};
     my $msg = {};
     $msg->{channel} = $message->{channel};
     $msg->{who}     = $message->{real_who};
     $msg->{message} = $message->{body};
     $msg->{emoted}  = 1;
     unshift( @{$buffer{$server->getServerName . '-' . $message->{channel}}}, $msg );
-    $buffer{$server->getServerName . '-' . $message->{channel}} = [ splice( @{$buffer{$server->getServerName . '-' . $message->{channel}}}, 0, 99 ) ];
+    $buffer{$server->getServerName . '-' . $message->{channel}} = [ splice( @{$buffer{$server->getServerName . '-' . $message->{channel}}}, 0, 249 ) ];
 }
 
 sub handleSaidQuote {
