@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 =end comment
 =cut
 
-package Saphira::Module::Top2000;
+package Saphira::Module::Top;
 use base 'Saphira::Module';
 use warnings;
 no warnings 'redefine';
@@ -37,10 +37,10 @@ sub init {
 
     $parser = JSON::XS->new->ascii->pretty->allow_nonref;
 
-    $self->registerHook( 'said', \&handleSaidTop2000 );
+    $self->registerHook( 'said', \&handleSaidTop );
 }
 
-sub handleTop2000 {
+sub handleSaidTop {
     my ( $wrapper, $server, $message ) = @_;
 
     return unless ( $message->{body} =~ m/^!top2000/ );
